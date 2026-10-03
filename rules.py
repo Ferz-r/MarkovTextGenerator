@@ -54,6 +54,20 @@ class Tokenizer(ABC):
     @abstractmethod
     def _split(self, text: str) -> list[str]: ...
 
+    def clear(self) -> None:
+        """Reset the vocabulary, keeping special tokens and configuration."""
+        self._piece_to_token = {
+            self._bos_str: self._bos_id,
+            self._eos_str: self._eos_id,
+            self._unk_str: self._unk_id,
+        }
+        self._token_to_piece = {
+            self._bos_id: self._bos_str,
+            self._eos_id: self._eos_str,
+            self._unk_id: self._unk_str,
+        }
+        self._next_id = max(self._bos_id, self._eos_id, self._unk_id) + 1
+
     def train(self, texts: list[str]) -> None:
         frequencies = Counter()
 
