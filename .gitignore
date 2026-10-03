@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local training corpus cache
+/data/texts.json
+/data/texts.json.tmp
