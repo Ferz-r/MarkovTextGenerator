@@ -94,12 +94,12 @@ def main() -> None:
     texts = load_corpus()
 
     tokenizer = RegexTokenizer(min_frequency=5)
-    generator = Markovka(tokenizer, max_length=200000, n_gramm=4)
+    generator = Markovka(tokenizer, max_length=500, n_gramm=8)
     generator.fit(texts=texts)
     print(f"Всего текстов: {len(texts)}")
     print(f"Размер словаря: {tokenizer.vocab_size}")
 
-    result = generator.generate(topic="Москва")
+    result = generator.generate(prefix="Какую мебель я купила себе домой?")
     print(f"Результат: {result}")
 
 

@@ -11,6 +11,8 @@ class Markovka:
         max_length: int,
         n_gramm: int = 3,
     ):
+        if n_gramm < 1:
+            raise ValueError("n_gramm must be at least 1")
         self._tokenizer = tokenizer
         self._max_length = max_length
         self._context_size = n_gramm
@@ -77,22 +79,25 @@ class Markovka:
         context: tuple[int, ...],
         transitions: dict[tuple[int, ...], dict[int, int]],
     ) -> int:
-        frequencies = transitions.get(context, {})
+        # Начинаем с полного контекста, затем убираем самые старые токены.
+        for size in range(len(context), 0, -1):
+            shorter_context = context[-size:]
+            frequencies = transitions.get(shorter_context, {})
 
-        tokens = []
-        weights = []
+            tokens = []
+            weights = []
 
-        for next_token, count in frequencies.items():
-            if next_token == self._tokenizer.unk_id:
-                continue
+            for next_token, count in frequencies.items():
+                if next_token == self._tokenizer.unk_id:
+                    continue
 
-            tokens.append(next_token)
-            weights.append(count)
+                tokens.append(next_token)
+                weights.append(count)
 
-        if not tokens:
-            return self._tokenizer.eos_id
+            if tokens:
+                return random.choices(tokens, weights=weights)[0]
 
-        return random.choices(tokens, weights=weights)[0]
+        return self._tokenizer.eos_id
 
     def _rebuild_transitions(self) -> None:
         # Частота учитывает все тексты, включая предыдущие вызовы update().
@@ -111,10 +116,12 @@ class Markovka:
             tokens = [self._tokenizer.bos_id] * (self._context_size - 1) + tokens
 
             for i in range(self._context_size, len(tokens)):
-                context = tuple(tokens[i - self._context_size : i])
                 next_token = tokens[i]
 
-                transitions[context][next_token] += 1
+                # Сохраняем переход для каждой длины контекста.
+                for size in range(1, self._context_size + 1):
+                    context = tuple(tokens[i - size : i])
+                    transitions[context][next_token] += 1
 
         return transitions
 
