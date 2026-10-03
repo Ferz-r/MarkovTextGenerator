@@ -1,5 +1,5 @@
-from collections import Counter
 import re
+from collections import Counter
 
 from rules import Tokenizer
 
@@ -17,35 +17,20 @@ class RegexTokenizer(Tokenizer):
     def __init__(
         self,
         min_frequency: int = 1,
-        unk_str: str = "<UNK>",
         **kwargs,
     ):
         super().__init__(**kwargs)
 
         if min_frequency < 1:
             raise ValueError("min_frequency must be at least 1")
-        if unk_str in self._piece_to_token:
-            raise ValueError("unk_str must differ from BOS and EOS strings")
 
         self._min_frequency = min_frequency
-        self._unk_str = unk_str
-        self._unk_id = self._next_token_id()
-        self._piece_to_token[unk_str] = self._unk_id
-        self._token_to_piece[self._unk_id] = unk_str
-
-    def _next_token_id(self) -> int:
-        token_id = 0
-        while token_id in self._token_to_piece:
-            token_id += 1
-        return token_id
 
     def _split(self, text: str) -> list[str]:
         return self._token_pattern.findall(text)
 
     def train(self, texts: list[str]) -> None:
-        frequencies = Counter(
-            piece for text in texts for piece in self._split(text)
-        )
+        frequencies = Counter(piece for text in texts for piece in self._split(text))
 
         # Sorting makes token IDs reproducible for the same training corpus.
         pieces = sorted(
@@ -66,8 +51,7 @@ class RegexTokenizer(Tokenizer):
     def encode(self, text: str) -> list[int]:
         tokens = [self._bos_id]
         tokens.extend(
-            self._piece_to_token.get(piece, self._unk_id)
-            for piece in self._split(text)
+            self._piece_to_token.get(piece, self._unk_id) for piece in self._split(text)
         )
         tokens.append(self._eos_id)
         return tokens
@@ -143,7 +127,7 @@ class BPETokenizer(Tokenizer):
 
                 for symbol in symbols:
                     if symbol not in self._piece_to_token:
-                        token_id = len(self._piece_to_token)
+                        token_id = self._next_token_id()
 
                         self._piece_to_token[symbol] = token_id
 
@@ -158,7 +142,7 @@ class BPETokenizer(Tokenizer):
             new_token = "".join(pair)
 
             if new_token not in self._piece_to_token:
-                token_id = len(self._piece_to_token)
+                token_id = self._next_token_id()
 
                 self._piece_to_token[new_token] = token_id
 
@@ -187,7 +171,7 @@ class BPETokenizer(Tokenizer):
             symbols = list(word)
             symbols = self._apply_bpe(symbols)
             for symbol in symbols:
-                tokens.append(self._piece_to_token[symbol])
+                tokens.append(self._piece_to_token.get(symbol, self._unk_id))
         tokens.append(self._eos_id)
 
         return tokens
