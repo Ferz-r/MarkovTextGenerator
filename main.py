@@ -1,10 +1,16 @@
-from text import texts
+from datasets import load_dataset
+
+# from text import texts
 from tokenizer import RegexTokenizer
 
-tokenizer = RegexTokenizer(min_frequency=1)
-tokenizer.train(texts)
+dataset = load_dataset("Mikimi/russian-wikipedia-top100k")
+df = dataset["train"].to_pandas()
+wikipedia = df.get("summary").to_list()
 
-tokens = tokenizer.encode("Привет, мир!")
+tokenizer = RegexTokenizer(min_frequency=1)
+tokenizer.train(wikipedia)
+print(f"Размер словаря {tokenizer.vocab_size}")
+tokens = tokenizer.encode("Как дела?")
 text = tokenizer.decode(tokens)
 
 print(tokens)
