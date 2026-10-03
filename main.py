@@ -1,9 +1,11 @@
-from tokenizer import BPETokenizer
 from text import texts
+from tokenizer import RegexTokenizer
 
-tokenizer = BPETokenizer(vocab_size=300000)
+tokenizer = RegexTokenizer(min_frequency=1)
 tokenizer.train(texts)
-print(tokenizer._merges)
-ids = tokenizer.encode("")
-print(ids)
-print(tokenizer.decode(ids))
+
+tokens = tokenizer.encode("Привет, мир!")
+text = tokenizer.decode(tokens)
+
+print(tokens)
+print(text)

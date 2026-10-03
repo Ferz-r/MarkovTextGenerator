@@ -30,7 +30,11 @@ class RegexTokenizer(Tokenizer):
         return self._token_pattern.findall(text)
 
     def train(self, texts: list[str]) -> None:
-        frequencies = Counter(piece for text in texts for piece in self._split(text))
+        frequencies = Counter()
+
+        for text in texts:
+            pieces = self._split(text)
+            frequencies.update(pieces)
 
         # Sorting makes token IDs reproducible for the same training corpus.
         pieces = sorted(

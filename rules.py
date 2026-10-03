@@ -42,10 +42,11 @@ class Tokenizer(ABC):
             unk_id: unk_str,
         }
 
+        self._next_id = 3
+
     def _next_token_id(self) -> int:
-        token_id = 0
-        while token_id in self._token_to_piece:
-            token_id += 1
+        token_id = self._next_id
+        self._next_id += 1
         return token_id
 
     @abstractmethod
