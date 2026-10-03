@@ -31,19 +31,27 @@ class Markovka:
         self._texts.extend(texts)
         self._rebuild_transitions()
 
-    def generate(self) -> str:
+    def generate(self, prompt: str = "") -> str:
         tokens = [self._tokenizer.bos_id] * self._context_size
+
+        prompt_tokens = self._tokenizer.encode(prompt)[
+            1:-1
+        ]  # [1:-1] чтобы убрать bos и eos из токенов промпта
+        tokens.extend(prompt_tokens)
+        generated_tokens = []
 
         for _ in range(self._max_lengh):
             context = tuple(tokens[-self._context_size :])
             next_token = self._sample_next_token(context)
 
             tokens.append(next_token)
+            generated_tokens.append(next_token)
 
             if next_token == self._tokenizer.eos_id:
                 break
 
-        return self._tokenizer.decode(tokens)
+        # Сохраняем исходный промпт, даже если в нём есть неизвестные слова.
+        return prompt + self._tokenizer.decode(generated_tokens)
 
     def _sample_next_token(self, context: tuple[int, ...]) -> int:
         frequencies = self._frequencies.get(context, {})
