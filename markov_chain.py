@@ -5,9 +5,15 @@ from rules import Tokenizer
 
 
 class Markovka:
-    def __init__(self, tokenizer: Tokenizer, max_lengh: int):
+    def __init__(
+        self,
+        tokenizer: Tokenizer,
+        max_lengh: int,
+        n_gramm: int = 3,
+    ):
         self._tokenizer = tokenizer
         self._max_lengh = max_lengh
+        self._context_size = n_gramm
 
         self._texts: list[str] = []
         self._frequencies: dict[int, dict[int, int]] = defaultdict(
@@ -26,38 +32,22 @@ class Markovka:
         self._rebuild_transitions()
 
     def generate(self) -> str:
-        tokens = [self._tokenizer.bos_id]
-
-        curent_token = self._tokenizer.bos_id
+        tokens = [self._tokenizer.bos_id] * self._context_size
 
         for _ in range(self._max_lengh):
-            next_token = self._sample_next_token(curent_token)
+            context = tuple(tokens[-self._context_size :])
+            next_token = self._sample_next_token(context)
 
             tokens.append(next_token)
 
             if next_token == self._tokenizer.eos_id:
                 break
 
-            curent_token = next_token
+        return self._tokenizer.decode(tokens)
 
-        output = self._tokenizer.decode(tokens=tokens)
-
-        return output
-
-    def _rebuild_transitions(self) -> None:
-        # Частота учитывает все тексты, включая предыдущие вызовы update().
-        self._tokenizer.train(self._texts)
-        self._frequencies.clear()
-
-        # Старые UNK тоже пересчитываются, если слово теперь вошло в словарь.
-        for text in self._texts:
-            tokens = self._tokenizer.encode(text)
-
-            for current_token, next_token in zip(tokens, tokens[1:]):
-                self._frequencies[current_token][next_token] += 1
-
-    def _sample_next_token(self, token: int) -> int:
-        frequencies = self._frequencies.get(token, {})
+    def _sample_next_token(self, context: tuple[int, ...]) -> int:
+        frequencies = self._frequencies.get(context, {})
+        # print("frequecncies", frequencies)
 
         tokens = []
         weights = []
@@ -73,6 +63,23 @@ class Markovka:
             return self._tokenizer.eos_id
 
         return random.choices(tokens, weights=weights)[0]
+
+    def _rebuild_transitions(self) -> None:
+        # Частота учитывает все тексты, включая предыдущие вызовы update().
+        self._tokenizer.train(self._texts)
+        self._frequencies.clear()
+
+        # Старые UNK тоже пересчитываются, если слово теперь вошло в словарь.
+        for text in self._texts:
+            tokens = self._tokenizer.encode(text)
+
+            tokens = [self._tokenizer.bos_id] * (self._context_size - 1) + tokens
+
+            for i in range(self._context_size, len(tokens)):
+                context = tuple(tokens[i - self._context_size : i])
+                next_token = tokens[i]
+
+                self._frequencies[context][next_token] += 1
 
     @property
     def transitions(self) -> dict[int, dict[int, int]]:
