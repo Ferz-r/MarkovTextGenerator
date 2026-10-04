@@ -10,5 +10,9 @@ wheels/
 .venv
 
 # Local training corpus cache
-/data/texts.json
-/data/texts.json.tmp
+/backend/data/texts.json
+/backend/data/texts.json.tmp
+
+# Tool and OS caches
+.ruff_cache/
+.DS_Store

@@ -1,10 +1,8 @@
 import json
+import logging
 from pathlib import Path
 
 from datasets import load_dataset
-
-from markov_chain import Markovka
-from tokenizer import RegexTokenizer
 
 # Лимит задаёт количество записей, а не токенов. None — весь источник.
 SOURCES = [
@@ -15,7 +13,8 @@ SOURCES = [
     # ("IlyaGusev/ficbook", ("parts",), 10),
 ]
 
-CACHE_FILE = Path(__file__).resolve().parent / "data" / "texts.json"
+CACHE_FILE = Path(__file__).resolve().parents[2] / "data" / "texts.json"
+logger = logging.getLogger("markov.corpus")
 CACHE_VERSION = 1
 
 
@@ -28,7 +27,7 @@ def load_corpus() -> list[str]:
         try:
             cached = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
-            print("Кеш повреждён, загружаем тексты заново...")
+            logger.warning("Кеш повреждён, загружаем тексты заново...")
         else:
             if (
                 isinstance(cached, dict)
@@ -37,9 +36,9 @@ def load_corpus() -> list[str]:
                 and isinstance(cached.get("texts"), list)
                 and all(isinstance(text, str) for text in cached["texts"])
             ):
-                print(f"Читаем тексты из локального кеша: {CACHE_FILE}")
+                logger.info("Читаем тексты из локального кеша: %s", CACHE_FILE)
                 return cached["texts"]
-            print("Настройки источников изменились или кеш устарел, обновляем...")
+            logger.info("Настройки источников изменились или кеш устарел, обновляем...")
 
     texts = []
     for dataset_name, fields, limit in SOURCES:
@@ -51,14 +50,14 @@ def load_corpus() -> list[str]:
     temporary_file = CACHE_FILE.with_suffix(".json.tmp")
     temporary_file.write_text(json.dumps(cached, ensure_ascii=False), encoding="utf-8")
     temporary_file.replace(CACHE_FILE)
-    print(f"Кеш сохранён: {CACHE_FILE}")
+    logger.info("Кеш сохранён: %s", CACHE_FILE)
     return texts
 
 
 def load_texts(
     dataset_name: str, fields: tuple[str, ...], limit: int | None
 ) -> list[str]:
-    print(f"Загрузка {dataset_name}...")
+    logger.info("Загрузка %s...", dataset_name)
     dataset = load_dataset(dataset_name, split="train", streaming=False)
     if limit is not None:
         dataset = dataset.take(limit)
@@ -86,22 +85,5 @@ def load_texts(
 
     if not texts:
         raise ValueError(f"Источник {dataset_name} не содержит подходящих текстов")
-    print(f"{dataset_name}: загружено {len(texts)} текстов")
+    logger.info("%s: загружено %s текстов", dataset_name, len(texts))
     return texts
-
-
-def main() -> None:
-    texts = load_corpus()
-
-    tokenizer = RegexTokenizer(min_frequency=5)
-    generator = Markovka(tokenizer, max_length=500, n_gramm=8)
-    generator.fit(texts=texts)
-    print(f"Всего текстов: {len(texts)}")
-    print(f"Размер словаря: {tokenizer.vocab_size}")
-
-    result = generator.generate(prefix="Какую мебель я купила себе домой?")
-    print(f"Результат: {result}")
-
-
-if __name__ == "__main__":
-    main()

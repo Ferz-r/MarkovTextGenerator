@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f4ef">
+    <title>Марков · Студия текста</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script type="module" src="/app.js"></script>
+</head>
+
+<body>
+    <header class="header"><a class="brand" href="/" aria-label="Марков — главная"><span
+                class="brand-icon">м.</span>марков<span class="brand-label">СТУДИЯ ТЕКСТА</span></a><span id="status"
+            class="status" role="status"><i></i>Подключение к модели</span></header>
+    <main>
+        <section class="intro">
+            <div><span class="eyebrow">СЛОВА → ВЕРОЯТНОСТИ → ИСТОРИИ</span>
+                <h1>У каждого слова<br>есть <em>продолжение.</em></h1>
+                <p>Задайте начало — марковская цепь подхватит мысль.<br>Каждая генерация открывает новый путь через
+                    словарь.</p>
+            </div>
+            <div class="chain" aria-hidden="true">
+                <span>однажды</span><b>↗</b><span>вечером</span><b>↘</b><span>город</span><b>→</b><span
+                    class="last">проснулся</span><small>ВЫБОР СЛЕДУЮЩЕГО СЛОВА</small></div>
+        </section>
+        <section class="workspace" aria-label="Студия">
+            <div class="editor">
+                <div class="section-top">
+                    <h2>Начнём с вашей мысли</h2><span>01 / ВВОД</span>
+                </div>
+                <form id="generate-form"><label for="prefix">Начало текста</label><textarea id="prefix"
+                        maxlength="10000" placeholder="Однажды в тихом городе…" rows="6"></textarea>
+                    <div class="input-footer"><span>Можно оставить пустым</span><span id="char-count">0 / 10 000</span>
+                    </div><label for="topic">Тема <span class="optional">необязательно</span></label><input id="topic"
+                        maxlength="200" placeholder="Например, Москва или путешествие">
+                    <p class="hint">Ищем тему в текстах, на которых обучена модель.</p>
+                    <div class="examples"><span>Попробуйте</span><button type="button"
+                            data-prefix="Однажды ">Однажды</button><button type="button" data-prefix="В этом городе ">В
+                            этом городе</button><button type="button" data-prefix="История началась ">История
+                            началась</button></div><button id="generate-button" class="primary" type="submit">Продолжить
+                        текст <span>↗</span></button>
+                </form>
+            </div>
+            <div class="result-panel">
+                <div class="section-top">
+                    <h2>Новая история</h2><span>02 / РЕЗУЛЬТАТ</span>
+                </div>
+                <div id="empty-result" class="empty-result"><span class="asterisk">✳</span>
+                    <h3>Дайте словам направление</h3>
+                    <p>Здесь появится продолжение вашего текста.<br>Одно начало — тысячи возможных историй.</p>
+                </div>
+                <div id="result" class="result" hidden></div>
+                <div class="result-bottom"><span id="result-meta">Случайность — часть процесса</span><button
+                        id="copy-button" class="text-button" type="button" disabled>Копировать ↗</button></div>
+            </div>
+        </section>
+        <section id="training-progress" class="training-progress" aria-label="Прогресс обучения" hidden><div class="progress-heading"><strong id="progress-stage" role="status">Подготовка к обучению</strong><span id="progress-percent">0%</span></div><progress id="progress-bar" value="0" max="100" aria-label="Прогресс текущего этапа"></progress><div class="progress-details"><span id="progress-count">Ожидание начала этапа</span><span id="progress-time">0.0 сек.</span></div></section>
+<div id="notice" class="notice" role="status" hidden></div>
+        <details class="settings training" open><summary><div><span class="training-icon">⚙</span><span>Настройки модели<small>Управляйте контекстом и длиной текста</small></span></div><span class="summary-arrow">↘</span></summary><form id="settings-form"><fieldset id="settings-fields"><div class="settings-grid"><div><label for="n-gramm">Длина контекста · ngramm</label><input id="n-gramm" type="number" min="1" max="50" step="1" required><p class="hint">От 1 до 50 токенов. Большой контекст требует больше времени и памяти.</p></div><div><label for="min-frequency">Минимальная частота</label><input id="min-frequency" type="number" min="1" max="100000" step="1" required><p class="hint">Сколько раз токен должен встретиться, чтобы попасть в словарь.</p></div><div><label for="max-length">Максимальная длина</label><input id="max-length" type="number" min="1" max="10000" step="1" required><p class="hint">Лимит новых токенов, без учёта начала текста. Пробелы и знаки тоже токены.</p></div></div><p class="hint">Контекст и частота применяются с переобучением на текущем корпусе. Длина — сразу. Настройки общие для всех пользователей и действуют до перезапуска сервера.</p><button id="settings-button" class="primary" type="submit">Применить настройки <span>↗</span></button></fieldset></form></details>
+<section class="model-section">
+            <div class="model-title"><span class="eyebrow">ЗА КУЛИСАМИ</span>
+                <h2>Модель в цифрах</h2>
+                <p>Словарь и связи, из которых складывается текст.</p>
+            </div>
+            <div class="stats">
+                <div><strong id="texts-count">—</strong><span>текстов в корпусе</span></div>
+                <div><strong id="vocab-size">—</strong><span>токенов в словаре</span></div>
+                <div><strong id="contexts-count">—</strong><span>контекстов</span></div>
+            </div><button id="refresh-button" class="text-button" type="button">Обновить ↻</button>
+        </section>
+        <details class="training">
+            <summary>
+                <div><span class="training-icon">＋</span><span>Добавьте модели новый опыт<small>Обучение на ваших
+                            текстах</small></span></div><span class="summary-arrow">↘</span>
+            </summary>
+            <form id="train-form"><div class="training-input-heading"><label for="training-texts">Тексты для обучения</label><button id="import-txt-button" class="text-button import-txt" type="button">Добавить .txt ↗</button><input id="training-file" type="file" accept=".txt,text/plain" aria-label="Выберите текстовый файл для обучения" hidden></div><button id="remove-file-button" class="text-button" type="button" hidden>Убрать файл ×</button><p id="file-status" class="hint file-status" role="status" hidden></p><textarea id="training-texts"
+                    rows="5" placeholder="Вставьте текст. Разделяйте отдельные тексты пустой строкой."
+                    ></textarea>
+                <p class="hint">Каждый абзац, отделённый пустой строкой, станет отдельным текстом. Изменения сохраняются
+                    до перезапуска сервера.</p><label class="checkbox"><input id="replace" type="checkbox"> Заменить
+                    текущий корпус этими текстами</label>
+                <p id="replace-warning" class="hint warning" hidden>Текущий корпус будет удалён из памяти. Для его
+                    восстановления потребуется перезапуск сервера.</p><button id="train-button" class="primary"
+                    type="submit">Обучить модель <span>↗</span></button>
+            </form>
+        </details>
+        <footer><span>марков / эксперимент со словами</span><span>Никакой магии. Только вероятности.</span></footer>
+    </main>
+</body>
+
+</html>

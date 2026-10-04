@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from collections import Counter
 from typing import Protocol
 
+from markov.logging import TrainingProgress
+
 
 class TokenizerProtocol(Protocol):
     def encode(self, text: str) -> list[int]: ...
@@ -71,9 +73,11 @@ class Tokenizer(ABC):
     def train(self, texts: list[str]) -> None:
         frequencies = Counter()
 
-        for text in texts:
+        progress = TrainingProgress("Подсчёт частот словаря", len(texts))
+        for index, text in enumerate(texts, start=1):
             pieces = self._split(text)
             frequencies.update(pieces)
+            progress.advance(index)
 
         # Sorting makes token IDs reproducible for the same training corpus.
         pieces = sorted(
@@ -86,10 +90,12 @@ class Tokenizer(ABC):
             key=lambda piece: (-frequencies[piece], piece),
         )
 
-        for piece in pieces:
+        progress = TrainingProgress("Построение словаря", len(pieces))
+        for index, piece in enumerate(pieces, start=1):
             token_id = self._next_token_id()
             self._piece_to_token[piece] = token_id
             self._token_to_piece[token_id] = piece
+            progress.advance(index)
 
     def encode(self, text: str) -> list[int]:
         tokens = [self._bos_id]

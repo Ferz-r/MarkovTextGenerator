@@ -1,6 +1,6 @@
 import re
 
-from rules import Tokenizer
+from markov.rules import Tokenizer
 
 # import tiktoken
 
