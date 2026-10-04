@@ -1,8 +1,9 @@
 import random
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 from markov.logging import TrainingProgress
 from markov.rules import Tokenizer
+from markov.transitions import TransitionIndex
 
 
 class Markovka:
@@ -20,11 +21,9 @@ class Markovka:
 
         self._texts: list[str] = []
         # Ограничиваем кеш: тематические таблицы могут занимать много памяти.
-        self._topic_transitions: OrderedDict[
-            str, dict[tuple[int, ...], dict[int, int]]
-        ] = OrderedDict()
-        self._frequencies: dict[tuple[int, ...], dict[int, int]] = defaultdict(
-            lambda: defaultdict(int)
+        self._topic_transitions: OrderedDict[str, TransitionIndex] = OrderedDict()
+        self._frequencies = TransitionIndex(
+            {}, sorted(tokenizer.token_to_piece), n_gramm
         )
 
     def fit(self, texts: list[str]) -> None:
@@ -66,7 +65,7 @@ class Markovka:
         # Сохраняем исходное начало, даже если в нём есть неизвестные слова.
         return prefix + self._tokenizer.decode(generated_tokens)
 
-    def prepare_topic(self, topic: str) -> dict[tuple[int, ...], dict[int, int]]:
+    def prepare_topic(self, topic: str) -> TransitionIndex:
         topic = topic.strip().casefold()
         if not topic:
             raise ValueError("Topic must not be empty")
@@ -91,7 +90,7 @@ class Markovka:
     def _sample_next_token(
         self,
         context: tuple[int, ...],
-        transitions: dict[tuple[int, ...], dict[int, int]],
+        transitions: TransitionIndex,
     ) -> int:
         # Начинаем с полного контекста, затем убираем самые старые токены.
         for size in range(len(context), 0, -1):
@@ -121,25 +120,29 @@ class Markovka:
 
     def _count_transitions(
         self, texts: list[str], stage: str = "Построение переходов"
-    ) -> dict[tuple[int, ...], dict[int, int]]:
-        transitions = defaultdict(lambda: defaultdict(int))
-
-        # Старые UNK тоже пересчитываются, если слово теперь вошло в словарь.
+    ) -> TransitionIndex:
+        token_ids = sorted(self._tokenizer.token_to_piece)
+        codes = {token: code for code, token in enumerate(token_ids)}
+        bits = max(1, (len(token_ids) - 1).bit_length())
+        oldest_shift = bits * (self._context_size - 1)
+        bos = codes[self._tokenizer.bos_id]
+        initial_context = 0
+        for _ in range(self._context_size):
+            initial_context = (initial_context << bits) | bos
+        records: dict[int, int] = {}
         progress = TrainingProgress(stage, len(texts))
         for index, text in enumerate(texts, start=1):
-            tokens = self._tokenizer.encode(text)
-
-            tokens = [self._tokenizer.bos_id] * (self._context_size - 1) + tokens
-
-            for i in range(self._context_size, len(tokens)):
-                next_token = tokens[i]
-
-                # Сохраняем переход для каждой длины контекста.
-                for size in range(1, self._context_size + 1):
-                    context = tuple(tokens[i - size : i])
-                    transitions[context][next_token] += 1
+            context = initial_context
+            # BOS already fills the context. Characters and EOS are targets.
+            for token in self._tokenizer.encode(text)[1:]:
+                code = codes[token]
+                record = (context << bits) | code
+                records[record] = records.get(record, 0) + 1
+                context = (code << oldest_shift) | (context >> bits)
             progress.advance(index)
-
+        indexing = TrainingProgress(f"Индексирование: {stage}", len(records))
+        transitions = TransitionIndex(records, token_ids, self._context_size)
+        indexing.advance(len(records))
         return transitions
 
     @property

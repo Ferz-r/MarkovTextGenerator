@@ -52,7 +52,7 @@ class APITest(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertIs(app.state.service.model, original_model)
             self.assertEqual(
-                client.post("/api/v1/generate", json={}).json()["text"], "кот"
+                client.post("/api/v1/generate", json={}).json()["text"], "к"
             )
             client.post("/api/v1/train", json={"texts": ["пёс бежит."] * 5})
             settings.update(n_gramm=2, min_frequency=6)
@@ -60,13 +60,13 @@ class APITest(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json()["settings"], settings)
             self.assertEqual(response.json()["texts_count"], 10)
-            self.assertNotIn("кот", app.state.service.tokenizer.piece_to_token)
+            self.assertNotIn("к", app.state.service.tokenizer.piece_to_token)
             self.assertIsNot(app.state.service.model, original_model)
             settings["min_frequency"] = 1
             self.assertEqual(
                 client.post("/api/v1/settings", json=settings).status_code, 200
             )
-            self.assertIn("пёс", app.state.service.tokenizer.piece_to_token)
+            self.assertIn("ё", app.state.service.tokenizer.piece_to_token)
             current_model = app.state.service.model
             for field, value in [
                 ("n_gramm", 0),
@@ -103,6 +103,7 @@ class APITest(unittest.TestCase):
                     "Подсчёт частот словаря",
                     "Построение словаря",
                     "Построение переходов",
+                    "Индексирование: Построение переходов",
                 },
             )
             self.assertTrue(any(p["percent"] == 0 for p in progress))

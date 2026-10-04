@@ -15,7 +15,7 @@ class MarkovService:
         max_length: int = 100,
         n_gramm: int = 15,
     ):
-        self.tokenizer = CharacterTokenizer()
+        self.tokenizer = CharacterTokenizer(min_frequency=min_frequency)
         self.model = Markovka(self.tokenizer, max_length=max_length, n_gramm=n_gramm)
         self._lock = RLock()
         self._texts_count = 0
@@ -69,7 +69,7 @@ class MarkovService:
                     settings.min_frequency,
                     settings.max_length,
                 )
-                tokenizer = CharacterTokenizer()
+                tokenizer = CharacterTokenizer(min_frequency=settings.min_frequency)
                 model = Markovka(
                     tokenizer, max_length=settings.max_length, n_gramm=settings.n_gramm
                 )
