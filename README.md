@@ -7,7 +7,44 @@ Continue a text, choose a topic, train the model on your own texts or `.txt` fil
 and change the context length, token frequency, and tokenizer type.
 The model is saved between runs.
 
-## Quick start
+## Quick start: Docker Hub
+
+With Docker running, pull the prebuilt image from
+[Docker Hub](https://hub.docker.com/r/ferzr/markov_text_generator) and start it:
+
+```sh
+docker pull ferzr/markov_text_generator:0.1.0
+docker run -p 8000:8000 -v markov-data:/app/backend/data ferzr/markov_text_generator:0.1.0
+```
+
+Once the model is ready, open http://127.0.0.1:8000.
+API documentation: http://127.0.0.1:8000/docs.
+No local Python or uv installation is required for this option.
+
+The image includes Python, backend dependencies, and frontend files.
+The named `markov-data` volume preserves the model and Hugging Face cache between runs.
+If no saved model exists, the full `Mikimi/russian-wikipedia-top100k` dataset is
+downloaded and the model is trained. The first run requires network access,
+time, and memory. Subsequent runs load the snapshot from the volume.
+The default training corpus remains in Russian; the interface language does not
+change the language of generated text or translate topic queries.
+
+## Build the Docker image yourself
+
+If you want to build from source or include your own changes, run these commands
+from the repository root instead:
+
+```sh
+docker build -t markov .
+docker run -p 8000:8000 -v markov-data:/app/backend/data markov
+```
+
+Local virtual environments, corpora, and snapshots are excluded from the image.
+Uvicorn listens on `0.0.0.0` inside the container; open the app at
+http://127.0.0.1:8000 on the host. It runs with one worker and no automatic reload.
+The container runs as the `markov` user.
+
+## Run locally without Docker
 
 Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 
@@ -17,35 +54,8 @@ uv sync --locked
 uv run python main.py
 ```
 
-Once the model is ready, open http://127.0.0.1:8000.
-API documentation: http://127.0.0.1:8000/docs.
-
-If no saved model exists, the full `Mikimi/russian-wikipedia-top100k` dataset is
-downloaded. The first run requires network access, time, and memory.
 Sources are configured in `backend/src/markov/infrastructure/corpus.py`.
 An existing snapshot is loaded without downloading or training.
-The default training corpus remains in Russian; the interface language does not
-change the language of generated text or translate topic queries.
-
-## Docker
-
-From the repository root:
-
-```sh
-docker build -t markov .
-docker run -p 8000:8000 -v markov-data:/app/backend/data markov
-```
-
-Open http://127.0.0.1:8000 once the model is ready.
-The image includes Python, backend dependencies, and frontend files.
-Local virtual environments, corpora, and snapshots are excluded from the image.
-The named `markov-data` volume preserves the model and Hugging Face cache between runs.
-On the first run without a snapshot, the model trains on the configured dataset;
-subsequent runs load the snapshot from the volume.
-
-Uvicorn listens on `0.0.0.0` inside the container; the published port is available
-at `127.0.0.1` on the host. It runs with one worker and no automatic reload.
-The container runs as the `markov` user.
 
 ## Architecture
 
