@@ -1,7 +1,7 @@
 [project]
 name = "markov"
 version = "0.1.0"
-description = "Учебный генератор текста на марковских цепях с FastAPI и веб-интерфейсом"
+description = "An educational Markov chain text generator with FastAPI and a web interface"
 readme = "README.md"
 authors = [
     { name = "Ferz", email = "ferzulka2003@gmail.com" }

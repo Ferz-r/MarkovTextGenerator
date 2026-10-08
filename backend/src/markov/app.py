@@ -29,24 +29,24 @@ def create_app(
                     service = await run_in_threadpool(MarkovService.load, model_path)
                 except Exception:
                     logger.exception(
-                        "Файл модели повреждён или несовместим, обучаем заново"
+                        "The model file is corrupted or incompatible; retraining"
                     )
             if service is None:
-                logger.info("Обученная модель отсутствует. Загружаем корпус и обучаем")
+                logger.info("No trained model found. Loading the corpus and training")
                 service = MarkovService(model_path=model_path)
                 texts = await run_in_threadpool(corpus_loader)
                 if not texts:
-                    raise ValueError("Корпус обучения пуст")
+                    raise ValueError("The training corpus is empty")
                 await run_in_threadpool(service.train, texts, replace=True)
         except Exception:
-            logger.exception("Не удалось подготовить модель")
+            logger.exception("Could not prepare the model")
             raise
         app.state.service = service
         try:
             yield
         finally:
             app.state.service = None
-            logger.info("Приложение остановлено")
+            logger.info("Application stopped")
 
     app = FastAPI(title="Markov API", version="0.1.0", lifespan=lifespan)
     app.include_router(router, prefix="/api/v1")

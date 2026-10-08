@@ -58,7 +58,7 @@ class MarkovService:
         ):
             raise ValueError("Training texts must be nonempty strings")
         with self._lock:
-            logger.info("Обучение модели: %s текстов, replace=%s", len(texts), replace)
+            logger.info("Training model: %s texts, replace=%s", len(texts), replace)
             corpus = list(texts) if replace else [*self._model.texts, *texts]
             candidate = self._make_model(self._settings)
             candidate.fit(corpus)
@@ -123,5 +123,5 @@ class MarkovService:
             model_path=path,
         )
         service._model = model
-        logger.info("Модель загружена без обучения: %s", path)
+        logger.info("Model loaded without training: %s", path)
         return service

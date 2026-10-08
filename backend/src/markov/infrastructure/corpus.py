@@ -2,7 +2,7 @@ import logging
 
 from datasets import load_dataset
 
-# Лимит задаёт количество записей, а не токенов. None — весь источник.
+# The limit counts records, not tokens. None uses the entire source.
 SOURCES = [
     ("Mikimi/russian-wikipedia-top100k", ("summary",), None),
 ]
@@ -21,7 +21,7 @@ def load_corpus() -> list[str]:
 def load_texts(
     dataset_name: str, fields: tuple[str, ...], limit: int | None
 ) -> list[str]:
-    logger.info("Загрузка %s...", dataset_name)
+    logger.info("Loading %s...", dataset_name)
     dataset = load_dataset(dataset_name, split="train", streaming=False)
     if limit is not None:
         dataset = dataset.take(limit)
@@ -29,7 +29,7 @@ def load_texts(
     texts = []
     for row in dataset:
         if fields == ("parts",):
-            # Главы Ficbook храним отдельными текстами.
+            # Store Ficbook chapters as separate texts.
             parts = row["parts"]
             if isinstance(parts, dict):
                 candidates = parts["clean_text"]
@@ -48,6 +48,6 @@ def load_texts(
                 texts.append(text.strip())
 
     if not texts:
-        raise ValueError(f"Источник {dataset_name} не содержит подходящих текстов")
-    logger.info("%s: загружено %s текстов", dataset_name, len(texts))
+        raise ValueError(f"Source {dataset_name} contains no suitable texts")
+    logger.info("%s: loaded %s texts", dataset_name, len(texts))
     return texts

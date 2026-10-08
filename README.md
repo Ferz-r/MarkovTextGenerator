@@ -1,15 +1,15 @@
 # Markov
 
-Учебный генератор текста на марковских цепях. Backend написан на Python и FastAPI,
-интерфейс — на HTML, CSS и JavaScript без сборки.
+An educational Markov chain text generator. The backend uses Python and FastAPI;
+the interface uses HTML, CSS, and JavaScript with no build step.
 
-Можно продолжить текст, выбрать тему, обучить модель на своих текстах или `.txt`,
-изменить длину контекста, частоту токенов и тип токенизатора.
-Модель сохраняется между запусками.
+Continue a text, choose a topic, train the model on your own texts or `.txt` files,
+and change the context length, token frequency, and tokenizer type.
+The model is saved between runs.
 
-## Быстрый запуск
+## Quick start
 
-Нужны Python 3.13+ и [uv](https://docs.astral.sh/uv/).
+Requires Python 3.13+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
 cd backend
@@ -17,57 +17,59 @@ uv sync --locked
 uv run python main.py
 ```
 
-После подготовки модели откройте http://127.0.0.1:8000.
-Документация API: http://127.0.0.1:8000/docs.
+Once the model is ready, open http://127.0.0.1:8000.
+API documentation: http://127.0.0.1:8000/docs.
 
-При отсутствии сохранённой модели скачивается полный датасет
-`Mikimi/russian-wikipedia-top100k`. Первый запуск требует сети, времени и памяти.
-Источники задаются в `backend/src/markov/infrastructure/corpus.py`.
-Существующий снимок загружается без скачивания и обучения.
+If no saved model exists, the full `Mikimi/russian-wikipedia-top100k` dataset is
+downloaded. The first run requires network access, time, and memory.
+Sources are configured in `backend/src/markov/infrastructure/corpus.py`.
+An existing snapshot is loaded without downloading or training.
+The default training corpus remains in Russian; the interface language does not
+change the language of generated text or translate topic queries.
 
 ## Docker
 
-Из корня репозитория:
+From the repository root:
 
 ```sh
 docker build -t markov .
 docker run -p 8000:8000 -v markov-data:/app/backend/data markov
 ```
 
-Откройте http://127.0.0.1:8000 после подготовки модели.
-Образ содержит Python, зависимости backend и файлы frontend.
-Локальные виртуальное окружение, корпус и снимки в образ не копируются.
-Именованный том `markov-data` сохраняет модель и кеш Hugging Face между запусками.
-При первом запуске без снимка модель обучается на настроенном датасете;
-следующие запуски загружают снимок из тома.
+Open http://127.0.0.1:8000 once the model is ready.
+The image includes Python, backend dependencies, and frontend files.
+Local virtual environments, corpora, and snapshots are excluded from the image.
+The named `markov-data` volume preserves the model and Hugging Face cache between runs.
+On the first run without a snapshot, the model trains on the configured dataset;
+subsequent runs load the snapshot from the volume.
 
-В контейнере Uvicorn слушает `0.0.0.0`, а опубликованный порт доступен на
-`127.0.0.1` компьютера. Запускается один worker, без автоматической перезагрузки.
-Контейнер работает от пользователя `markov`.
+Uvicorn listens on `0.0.0.0` inside the container; the published port is available
+at `127.0.0.1` on the host. It runs with one worker and no automatic reload.
+The container runs as the `markov` user.
 
-## Архитектура
+## Architecture
 
 ```text
 backend/
-├── main.py                  # точка запуска
+├── main.py                  # entry point
 ├── src/markov/
-│   ├── app.py               # сборка FastAPI и жизненный цикл
-│   ├── domain/              # модель, индекс, настройки и токенизаторы
-│   ├── application/         # сервис: операции и синхронизация
-│   ├── infrastructure/      # файлы, снимки и внешние источники
-│   ├── api/                 # HTTP-схемы, маршруты и SSE
-│   ├── progress.py          # сообщения о ходе обучения
-│   └── logging.py           # настройка журналирования
+│   ├── app.py               # FastAPI setup and lifecycle
+│   ├── domain/              # model, index, settings, and tokenizers
+│   ├── application/         # service: operations and synchronization
+│   ├── infrastructure/      # files, snapshots, and external sources
+│   ├── api/                 # HTTP schemas, routes, and SSE
+│   ├── progress.py          # training progress messages
+│   └── logging.py           # logging configuration
 └── tests/
-frontend/                    # интерфейс без npm-зависимостей
+frontend/                    # interface with no npm dependencies
 ```
 
-Алгоритм не зависит от HTTP API или Uvicorn. Токенизаторы реализуют общий
-абстрактный класс. Модель владеет корпусом и проверяет своё состояние при
-восстановлении; сервис управляет доступом и сохранением. Подробнее:
-[архитектура](ARCHITECTURE.md), [backend](backend/README.md).
+The algorithm is independent of the HTTP API and Uvicorn. Tokenizers implement a
+shared abstract class. The model owns the corpus and validates its state during
+restoration; the service manages access and persistence. See
+[architecture](ARCHITECTURE.md) and [backend](backend/README.md).
 
-## Проверки
+## Checks
 
 ```sh
 cd backend
@@ -77,18 +79,18 @@ uv run ruff format --check .
 uv run python -m unittest discover -s tests
 ```
 
-GitHub Actions выполняет эти проверки на Python 3.13 и 3.14.
-Тесты используют небольшие локальные корпуса, не скачивают датасеты.
+GitHub Actions runs these checks on Python 3.13 and 3.14.
+Tests use small local corpora and do not download datasets.
 
-## Ограничения
+## Limitations
 
-Приложение предназначено для локального учебного использования. Запускайте один
-worker: модель и блокировка находятся в памяти процесса. Обучение и генерация
-выполняются последовательно. Авторизации и ограничений размера корпуса нет.
-Публикация исходного кода не означает готовность API к открытому доступу в интернете.
+This application is intended for local educational use. Run one worker: the model
+and lock live in process memory. Training and generation run sequentially.
+There is no authentication or corpus size limit. Publishing the source code does
+not make the API ready for public internet access.
 
-Безопасное обновление временно держит старую и новую модели в памяти.
-Большой корпус и длинный контекст могут требовать значительной памяти.
+Safe updates temporarily keep both the old and new models in memory.
+Large corpora and long contexts can require substantial memory.
 
-Код распространяется по [лицензии MIT](LICENSE). Лицензия проекта не распространяется
-на внешние датасеты; обученные снимки и скачанные тексты исключены из Git.
+The code is distributed under the [MIT license](LICENSE). The project license does
+not cover external datasets; trained snapshots and downloaded texts are excluded from Git.

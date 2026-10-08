@@ -47,4 +47,4 @@ def write_snapshot(path: Path, snapshot: dict) -> None:
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)
-    logger.info("Обученная модель сохранена: %s", path)
+    logger.info("Trained model saved: %s", path)

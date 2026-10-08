@@ -66,7 +66,7 @@ class Tokenizer(ABC):
     def train(self, texts: list[str]) -> None:
         frequencies = Counter()
 
-        progress = TrainingProgress("Подсчёт частот словаря", len(texts))
+        progress = TrainingProgress("Counting vocabulary frequencies", len(texts))
         for index, text in enumerate(texts, start=1):
             pieces = self._split(text)
             frequencies.update(pieces)
@@ -83,7 +83,7 @@ class Tokenizer(ABC):
             key=lambda piece: (-frequencies[piece], piece),
         )
 
-        progress = TrainingProgress("Построение словаря", len(pieces))
+        progress = TrainingProgress("Building vocabulary", len(pieces))
         for index, piece in enumerate(pieces, start=1):
             token_id = self._next_token_id()
             self._piece_to_token[piece] = token_id

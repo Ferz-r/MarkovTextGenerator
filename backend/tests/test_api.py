@@ -100,10 +100,10 @@ class APITest(unittest.TestCase):
             self.assertEqual(
                 {p["stage"] for p in progress},
                 {
-                    "Подсчёт частот словаря",
-                    "Построение словаря",
-                    "Построение переходов",
-                    "Индексирование: Построение переходов",
+                    "Counting vocabulary frequencies",
+                    "Building vocabulary",
+                    "Building transitions",
+                    "Indexing: Building transitions",
                 },
             )
             self.assertTrue(any(p["percent"] == 0 for p in progress))
@@ -160,13 +160,13 @@ class APITest(unittest.TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertIn("event: complete", response.text)
                 self.assertIn('"texts_count": 3', response.text)
-                self.assertIn("Чтение файла", response.text)
+                self.assertIn("Reading file", response.text)
             response = client.post(
                 "/api/v1/train/file/stream",
                 files={"file": ("empty.txt", b"", "text/plain")},
             )
             self.assertIn("event: error", response.text)
-            self.assertIn("Файл пустой", response.text)
+            self.assertIn("The file is empty", response.text)
             self.assertEqual(client.get("/api/v1/model").json()["texts_count"], 3)
             response = client.post(
                 "/api/v1/train/file/stream",

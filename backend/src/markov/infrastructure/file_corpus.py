@@ -17,13 +17,13 @@ def load_file_texts(path: Path) -> list[str]:
 
     def read(encoding: str) -> list[str]:
         texts = []
-        progress = TrainingProgress("Чтение файла", path.stat().st_size)
+        progress = TrainingProgress("Reading file", path.stat().st_size)
         last_offset = 0
         with path.open("r", encoding=encoding) as source:
             for line in source:
                 if "\x00" in line:
                     raise CorpusFileError(
-                        "Файл содержит двоичные данные. Выберите обычный .txt."
+                        "The file contains binary data. Choose a plain .txt file."
                     )
                 text = line.strip()
                 if text:
@@ -33,7 +33,7 @@ def load_file_texts(path: Path) -> list[str]:
                     progress.advance(offset)
                     last_offset = offset
         if not texts:
-            raise CorpusFileError("Файл пустой. Добавьте текст для обучения.")
+            raise CorpusFileError("The file is empty. Add text for training.")
         progress.advance(progress.total)
         return texts
 
@@ -42,6 +42,6 @@ def load_file_texts(path: Path) -> list[str]:
     except UnicodeDecodeError:
         if encoding != "utf-8-sig":
             raise CorpusFileError(
-                "Не удалось прочитать файл. Сохраните его в UTF-8."
+                "Could not read the file. Save it as UTF-8."
             ) from None
         return read("cp1251")

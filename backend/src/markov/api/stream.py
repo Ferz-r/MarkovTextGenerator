@@ -32,12 +32,12 @@ def training_stream(
             except CorpusFileError as exc:
                 queue.put(("error", {"message": str(exc)}))
             except Exception:
-                logger.exception("Ошибка обучения в потоковом запросе")
+                logger.exception("Training failed in a streaming request")
                 queue.put(
                     (
                         "error",
                         {
-                            "message": "Не удалось завершить обучение. Подробности — в терминале сервера."
+                            "message": "Could not complete training. See the server terminal for details."
                         },
                     )
                 )

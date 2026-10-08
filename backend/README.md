@@ -1,92 +1,95 @@
 # Markov API
 
-## Запуск
+## Running
 
 ```sh
 uv sync --locked
-uv run python main.py               # настроенные внешние источники
-uv run uvicorn main:app --reload     # разработка с внешними источниками
+uv run python main.py               # configured external sources
+uv run uvicorn main:app --reload     # development with external sources
 ```
 
 API: http://127.0.0.1:8000/api/v1. Swagger: http://127.0.0.1:8000/docs.
 
-При запуске загружается `data/model.pkl.gz`. Если снимок отсутствует
-или не читается, модель обучается
-на корпусе. Параметры снимка имеют приоритет над начальными настройками сервиса.
-Исходные тексты для обучения загружаются из настроенных источников;
-локальный JSON-кеш корпуса не используется.
+Startup loads `data/model.pkl.gz`. If the snapshot is missing or unreadable, the
+model trains on the corpus. Snapshot parameters take precedence over the service's
+initial settings. Training texts are loaded from configured sources;
+no local JSON corpus cache is used. The default dataset remains in Russian.
 
 ## API
 
-| Метод | Путь | Назначение |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/health` | Готовность приложения |
-| GET | `/model` | Настройки, число текстов, размер словаря и число контекстов |
-| POST | `/generate` | Генерация с `prefix` и необязательным `topic` |
-| POST | `/train` | Обучение на `texts`; `replace: true` заменяет корпус |
-| POST | `/settings` | Изменение настроек |
-| POST | `/train/stream` | Обучение с прогрессом SSE |
-| POST | `/settings/stream` | Настройка с прогрессом SSE |
-| POST | `/train/file/stream` | Загрузка `.txt` и обучение с прогрессом SSE |
+| GET | `/health` | Application readiness |
+| GET | `/model` | Settings, text count, vocabulary size, and context count |
+| POST | `/generate` | Generate with `prefix` and optional `topic` |
+| POST | `/train` | Train on `texts`; `replace: true` replaces the corpus |
+| POST | `/settings` | Change settings |
+| POST | `/train/stream` | Train with SSE progress |
+| POST | `/settings/stream` | Change settings with SSE progress |
+| POST | `/train/file/stream` | Upload a `.txt` file and train with SSE progress |
 
-Все пути в таблице имеют префикс `/api/v1`.
+All paths in the table have the `/api/v1` prefix.
 
 ```sh
 curl -X POST http://127.0.0.1:8000/api/v1/generate \
   -H 'Content-Type: application/json' \
-  -d '{"prefix": "Однажды", "topic": "Москва"}'
+  -d '{"prefix": "", "topic": ""}'
 
 curl -X POST http://127.0.0.1:8000/api/v1/train \
   -H 'Content-Type: application/json' \
-  -d '{"texts": ["Новый текст для обучения."], "replace": false}'
+  -d '{"texts": ["A new text for training."], "replace": false}'
 ```
 
-`texts` разбиваются по строкам, пустые строки пропускаются; полностью пустые
-элементы отклоняются. Неизвестная тема и некорректный JSON-запрос возвращают HTTP 422.
+Prefixes and topics should use the language of the training corpus. Topic queries
+are matched literally, without translation.
 
-Файловый метод принимает multipart-поля `file`, `replace` и необязательное `texts`
-(JSON-массив). Поддерживаются UTF-8, UTF-16 с BOM и Windows-1251. Каждая непустая
-строка — отдельный текст. Временный файл удаляется после обработки.
+`texts` are split into lines, skipping blank lines; entirely blank items are
+rejected. Unknown topics and invalid JSON requests return HTTP 422.
 
-SSE передаёт `start`, `progress`, `complete` или `error`. Процент относится к текущему
-этапу. Разрыв соединения не отменяет уже запущенную операцию. Ошибка операции после
-начала потока передаётся событием `error`, а не новым HTTP-статусом.
+The file endpoint accepts multipart fields `file`, `replace`, and optional `texts`
+(a JSON array). UTF-8, UTF-16 with BOM, and Windows-1251 are supported. Each nonempty
+line is a separate text. The temporary file is deleted after processing.
 
-## Настройки
+SSE sends `start`, `progress`, `complete`, or `error` events. Percentages refer to
+the current stage. Disconnecting does not cancel an operation that has started.
+An operation failure after streaming begins is sent as an `error` event rather
+than a new HTTP status.
+
+## Settings
 
 ```json
 {"tokenizer": "character", "n_gramm": 3, "min_frequency": 5, "max_length": 100}
 ```
 
-- `tokenizer`: `character` или `regex`.
-- `n_gramm`: контекст 1–50 токенов. Историческое имя поля API сохранено;
-  внутри модели используется `context_size`.
-- `min_frequency`: минимальная частота токена 1–100000.
-- `max_length`: максимум новых токенов 1–10000.
+- `tokenizer`: `character` or `regex`.
+- `n_gramm`: a context of 1–50 tokens. The historical API field name is preserved;
+  the model uses `context_size` internally.
+- `min_frequency`: minimum token frequency, 1–100000.
+- `max_length`: maximum number of new tokens, 1–10000.
 
-Тип токенизатора, частота и контекст пересчитывают модель; длина применяется без
-обучения. Настройки общие для всех клиентов и сохраняются между запусками.
-Начальные значения определены в `MarkovService`.
+Tokenizer type, frequency, and context changes rebuild the model; length changes
+apply without training. Settings are shared by all clients and saved between runs.
+Initial values are defined in `MarkovService`.
 
-Для темы выбираются тексты, содержащие её без учёта регистра. Два последних
-тематических индекса кешируются. Изменение корпуса сбрасывает кеш.
+Topic selection uses texts containing the topic, ignoring case. The two most
+recent topic indexes are cached. Corpus changes clear the cache.
 
-## Устройство и сохранение
+## Structure and persistence
 
-См. [архитектуру](../ARCHITECTURE.md). `domain/transitions.py` хранит компактный индекс
-по полному обратному контексту; частоты коротких контекстов суммируются по диапазону.
-Свойство `model.transitions` разворачивает полную таблицу для отладки и может занимать
-много памяти. Для статистики используйте `contexts_count`.
+See [architecture](../ARCHITECTURE.md). `domain/transitions.py` stores a compact
+index of full reversed contexts; short-context frequencies are summed over a range.
+The `model.transitions` property expands the full table for debugging and can use
+substantial memory. Use `contexts_count` for statistics.
 
-Обучение и генерация защищены блокировкой. Сервис строит новую модель отдельно и
-публикует её только после успешной записи. Снимок версии 1 содержит примитивные
-данные в gzip; загрузчик запрещает Python-классы. Сохранены совместимость с прежними
-снимками версии 1 и тексты, необходимые для переобучения.
+Training and generation are protected by a lock. The service builds a new model
+separately and publishes it only after a successful write. Version 1 snapshots
+contain primitive data in gzip; the loader prohibits Python classes. Compatibility
+with earlier version 1 snapshots and the texts required for retraining is preserved.
 
-Используйте один worker. Снимки и корпуса в `data/` не входят в репозиторий.
-В тестовом приложении сохранение отключено, пока не передан `model_path`.
+Use one worker. Snapshots and corpora in `data/` are excluded from the repository.
+Persistence is disabled in test applications unless `model_path` is provided.
 
-## Проверки
+## Checks
 
 ```sh
 uv sync --locked --group dev

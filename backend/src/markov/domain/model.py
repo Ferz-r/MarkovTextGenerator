@@ -23,7 +23,7 @@ class MarkovChain:
         self._context_size = context_size
 
         self._texts: list[str] = []
-        # Ограничиваем кеш: тематические таблицы могут занимать много памяти.
+        # Limit the cache: topic tables can use substantial memory.
         self._topic_transitions: OrderedDict[str, TransitionIndex] = OrderedDict()
         self._frequencies = TransitionIndex(
             {}, sorted(tokenizer.token_to_piece), context_size
@@ -51,7 +51,7 @@ class MarkovChain:
 
         prefix_tokens = self._tokenizer.encode(prefix)[
             1:-1
-        ]  # [1:-1] чтобы убрать bos и eos из токенов промпта
+        ]  # [1:-1] removes bos and eos from the prompt tokens
         tokens.extend(prefix_tokens)
         generated_tokens = []
 
@@ -65,7 +65,7 @@ class MarkovChain:
             if next_token == self._tokenizer.eos_id:
                 break
 
-        # Сохраняем исходное начало, даже если в нём есть неизвестные слова.
+        # Preserve the original prefix even if it contains unknown words.
         return prefix + self._tokenizer.decode(generated_tokens)
 
     def prepare_topic(self, topic: str) -> TransitionIndex:
@@ -79,7 +79,7 @@ class MarkovChain:
         if not topic_texts:
             raise ValueError(f"No training texts found for topic: {topic}")
         transitions = self._count_transitions(
-            topic_texts, stage=f"Переходы для темы «{topic}»"
+            topic_texts, stage=f'Transitions for topic "{topic}"'
         )
         self._topic_transitions[topic] = transitions
         if len(self._topic_transitions) > 2:
@@ -95,7 +95,7 @@ class MarkovChain:
         context: tuple[int, ...],
         transitions: TransitionIndex,
     ) -> int:
-        # Начинаем с полного контекста, затем убираем самые старые токены.
+        # Start with the full context, then drop the oldest tokens.
         for size in range(len(context), 0, -1):
             shorter_context = context[-size:]
             frequencies = transitions.get(shorter_context, {})
@@ -117,12 +117,12 @@ class MarkovChain:
 
     def _rebuild_transitions(self) -> None:
         self._topic_transitions.clear()
-        # Частота учитывает все тексты, включая предыдущие вызовы update().
+        # Frequency includes all texts, including previous update() calls.
         self._tokenizer.train(self._texts)
         self._frequencies = self._count_transitions(self._texts)
 
     def _count_transitions(
-        self, texts: list[str], stage: str = "Построение переходов"
+        self, texts: list[str], stage: str = "Building transitions"
     ) -> TransitionIndex:
         token_ids = sorted(self._tokenizer.token_to_piece)
         codes = {token: code for code, token in enumerate(token_ids)}
@@ -143,7 +143,7 @@ class MarkovChain:
                 records[record] = records.get(record, 0) + 1
                 context = (code << oldest_shift) | (context >> bits)
             progress.advance(index)
-        indexing = TrainingProgress(f"Индексирование: {stage}", len(records))
+        indexing = TrainingProgress(f"Indexing: {stage}", len(records))
         transitions = TransitionIndex(records, token_ids, self._context_size)
         indexing.advance(len(records))
         return transitions

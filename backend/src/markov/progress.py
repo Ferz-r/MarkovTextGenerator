@@ -38,7 +38,7 @@ class TrainingProgress:
             self.next_ui_percent = percent + 1
         if percent >= self.next_percent or completed == self.total:
             self.logger.info(
-                "%s: %s/%s (%s%%), %.1f сек.",
+                "%s: %s/%s (%s%%), %.1f s",
                 self.stage,
                 completed,
                 self.total,

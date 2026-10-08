@@ -24,7 +24,7 @@ router = APIRouter()
 def get_service(request: Request) -> MarkovService:
     service = getattr(request.app.state, "service", None)
     if service is None:
-        raise HTTPException(status_code=503, detail="Модель ещё не загружена")
+        raise HTTPException(status_code=503, detail="The model has not loaded yet")
     return service
 
 
@@ -81,7 +81,9 @@ async def train_file_stream(
 ) -> StreamingResponse:
     service = get_service(request)
     if not (file.filename or "").lower().endswith(".txt"):
-        raise HTTPException(status_code=422, detail="Выберите файл с расширением .txt.")
+        raise HTTPException(
+            status_code=422, detail="Choose a file with the .txt extension."
+        )
     try:
         extra_texts = json.loads(texts)
         if not isinstance(extra_texts, list) or any(
@@ -90,7 +92,7 @@ async def train_file_stream(
             raise ValueError
     except (ValueError, TypeError):
         raise HTTPException(
-            status_code=422, detail="Некорректные дополнительные тексты."
+            status_code=422, detail="Invalid additional texts."
         ) from None
 
     def save() -> Path:

@@ -18,7 +18,7 @@ class TrainRequest(BaseModel):
     @classmethod
     def validate_texts(cls, texts: list[str]) -> list[str]:
         if any(not text.strip() for text in texts):
-            raise ValueError("Тексты должны быть непустыми")
+            raise ValueError("Texts must not be empty")
         return [
             line.strip() for text in texts for line in text.splitlines() if line.strip()
         ]
