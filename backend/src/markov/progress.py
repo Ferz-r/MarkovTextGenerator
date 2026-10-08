@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from time import monotonic
@@ -10,7 +10,7 @@ _progress_listener: ContextVar[Callable[[dict], None] | None] = ContextVar(
 
 
 @contextmanager
-def listen_progress(listener: Callable[[dict], None]) -> Iterator[None]:
+def listen_progress(listener: Callable[[dict], None]) -> Generator[None, None, None]:
     token = _progress_listener.set(listener)
     try:
         yield
