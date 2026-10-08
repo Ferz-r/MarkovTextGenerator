@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 
 from datasets import load_dataset
 
@@ -52,12 +51,3 @@ def load_texts(
         raise ValueError(f"Источник {dataset_name} не содержит подходящих текстов")
     logger.info("%s: загружено %s текстов", dataset_name, len(texts))
     return texts
-
-
-def load_demo_corpus() -> list[str]:
-    """Load the small repository corpus without network access."""
-    from markov.infrastructure.file_corpus import load_file_texts
-
-    return load_file_texts(
-        Path(__file__).resolve().parents[4] / "examples" / "corpus.txt"
-    )

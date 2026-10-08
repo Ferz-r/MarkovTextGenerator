@@ -8,7 +8,7 @@ FastAPI раздаёт файлы этой папки и API с одного а�
 ```sh
 cd backend
 uv sync --locked
-uv run python main.py --demo
+uv run python main.py
 ```
 
 Откройте http://127.0.0.1:8000 после окончания обучения модели.
