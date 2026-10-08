@@ -45,7 +45,7 @@ frontend/                    # интерфейс без npm-зависимос�
 Алгоритм не зависит от HTTP API или Uvicorn. Токенизаторы реализуют общий
 абстрактный класс. Модель владеет корпусом и проверяет своё состояние при
 восстановлении; сервис управляет доступом и сохранением. Подробнее:
-[архитектура](ARCHITECTURE.md), [backend](backend/README.md), [frontend](frontend/README.md).
+[архитектура](ARCHITECTURE.md), [backend](backend/README.md).
 
 ## Проверки
 
