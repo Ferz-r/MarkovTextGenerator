@@ -6,12 +6,11 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from starlette.concurrency import run_in_threadpool
-
 from markov.api.routes import router
 from markov.corpus import load_corpus
 from markov.logging import configure_logging
 from markov.service import MarkovService
+from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger("markov.app")
 

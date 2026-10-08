@@ -7,8 +7,8 @@ from datasets import load_dataset
 # Лимит задаёт количество записей, а не токенов. None — весь источник.
 SOURCES = [
     ("Mikimi/russian-wikipedia-top100k", ("summary",), None),
-    ("inkoziev/ru_stories", tuple(f"sentence{i}" for i in range(1, 6)), 2000),
-    ("IlyaGusev/gazeta", ("text",), 2000),
+    # ("inkoziev/ru_stories", tuple(f"sentence{i}" for i in range(1, 6)), 2000),
+    # ("IlyaGusev/gazeta", ("text",), 2000),
     # # ("IlyaGusev/pikabu", ("text_markdown",), 2000),
     # ("IlyaGusev/ficbook", ("parts",), 10),
 ]
@@ -46,7 +46,7 @@ def load_corpus() -> list[str]:
 
     cached = {"version": CACHE_VERSION, "sources": sources, "texts": texts}
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    # Сначала записываем временный файл, чтобы не оставить неполный кеш.
+
     temporary_file = CACHE_FILE.with_suffix(".json.tmp")
     temporary_file.write_text(json.dumps(cached, ensure_ascii=False), encoding="utf-8")
     temporary_file.replace(CACHE_FILE)

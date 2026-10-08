@@ -8,7 +8,7 @@ class CorpusFileError(ValueError):
 
 
 def load_file_texts(path: Path) -> list[str]:
-    """Read paragraphs on the server without building one giant browser string."""
+    """Read each nonempty line as a training text on the server without building one giant browser string."""
     with path.open("rb") as source:
         bom = source.read(3)
     encoding = "utf-8-sig"
@@ -17,7 +17,6 @@ def load_file_texts(path: Path) -> list[str]:
 
     def read(encoding: str) -> list[str]:
         texts = []
-        paragraph = []
         progress = TrainingProgress("Чтение файла", path.stat().st_size)
         last_offset = 0
         with path.open("r", encoding=encoding) as source:
@@ -26,17 +25,13 @@ def load_file_texts(path: Path) -> list[str]:
                     raise CorpusFileError(
                         "Файл содержит двоичные данные. Выберите обычный .txt."
                     )
-                if line.strip():
-                    paragraph.append(line)
-                elif paragraph:
-                    texts.append("".join(paragraph).strip())
-                    paragraph = []
+                text = line.strip()
+                if text:
+                    texts.append(text)
                 offset = min(source.buffer.tell(), max(0, progress.total - 1))
                 if offset > last_offset:
                     progress.advance(offset)
                     last_offset = offset
-        if paragraph:
-            texts.append("".join(paragraph).strip())
         if not texts:
             raise CorpusFileError("Файл пустой. Добавьте текст для обучения.")
         progress.advance(progress.total)

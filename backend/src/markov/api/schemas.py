@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -19,10 +21,16 @@ class TrainRequest(BaseModel):
     def validate_texts(cls, texts: list[str]) -> list[str]:
         if any(not text.strip() for text in texts):
             raise ValueError("Тексты должны быть непустыми")
-        return texts
+        return [
+            line.strip() for text in texts for line in text.splitlines() if line.strip()
+        ]
+
+
+TokenizerKind = Literal["character", "regex"]
 
 
 class ModelSettings(BaseModel):
+    tokenizer: TokenizerKind = "character"
     n_gramm: int = Field(ge=1, le=50, strict=True)
     min_frequency: int = Field(ge=1, le=100000, strict=True)
     max_length: int = Field(ge=1, le=10000, strict=True)

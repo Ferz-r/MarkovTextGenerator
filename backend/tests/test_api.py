@@ -178,3 +178,55 @@ class APITest(unittest.TestCase):
                 files={"file": ("bad.pdf", b"abc", "text/plain")},
             )
             self.assertEqual(response.status_code, 422)
+
+    def test_single_newlines_are_independent_training_texts(self):
+        app = create_app(lambda: ["исходный текст"])
+        with TestClient(app) as client:
+            settings = client.get("/api/v1/model").json()["settings"]
+            settings["min_frequency"] = 1
+            client.post("/api/v1/settings", json=settings)
+            for uploaded in (False, True):
+                if uploaded:
+                    response = client.post(
+                        "/api/v1/train/file/stream",
+                        files={
+                            "file": (
+                                "words.txt",
+                                "арбуз\r\nбанан\r\n\r\nвишня".encode(),
+                                "text/plain",
+                            )
+                        },
+                        data={"replace": "true"},
+                    )
+                    self.assertIn("event: complete", response.text)
+                else:
+                    response = client.post(
+                        "/api/v1/train",
+                        json={"texts": ["арбуз\nбанан\n\nвишня"], "replace": True},
+                    )
+                    self.assertEqual(response.status_code, 200)
+                self.assertEqual(client.get("/api/v1/model").json()["texts_count"], 3)
+                model = app.state.service.model
+                tokenizer = app.state.service.tokenizer
+                first = model._frequencies.get(
+                    (tokenizer.bos_id,) * model._context_size
+                )
+                self.assertEqual(
+                    {
+                        tokenizer.decode([token]): count
+                        for token, count in first.items()
+                    },
+                    {"а": 1, "б": 1, "в": 1},
+                )
+                for text in model._texts:
+                    self.assertNotIn("\n", text)
+                with patch(
+                    "markov.markov_chain.random.choices",
+                    side_effect=lambda tokens, weights, tokenizer=tokenizer: (
+                        [tokenizer.piece_to_token["б"]]
+                        if tokenizer.piece_to_token["б"] in tokens
+                        else [tokens[0]]
+                    ),
+                ):
+                    response = client.post("/api/v1/generate", json={})
+                    self.assertTrue(response.json()["text"].startswith("б"))

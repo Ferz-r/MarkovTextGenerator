@@ -95,6 +95,8 @@ async function streamTraining(path, data) {
 
 function setStats(stats) {
   currentSettings = stats.settings;
+  $('tokenizer').value = stats.settings.tokenizer;
+  updateTokenizerHint();
   $('n-gramm').value = stats.settings.n_gramm;
   $('min-frequency').value = stats.settings.min_frequency;
   $('max-length').value = stats.settings.max_length;
@@ -184,7 +186,7 @@ $('remove-file-button').addEventListener('click', () => {
 $('train-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (busy) return;
-  const texts = $('training-texts').value.split(/\n\s*\n/).map((text) => text.trim()).filter(Boolean);
+  const texts = $('training-texts').value.split(/\r\n|[\r\n]/).map((text) => text.trim()).filter(Boolean);
   if (!texts.length && !trainingFile) {
     notify('Добавьте хотя бы один непустой текст.', true); return;
   }
@@ -209,11 +211,12 @@ $('settings-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (busy) return;
   const settings = {
+    tokenizer: $('tokenizer').value,
     n_gramm: Number($('n-gramm').value),
     min_frequency: Number($('min-frequency').value),
     max_length: Number($('max-length').value),
   };
-  const rebuild = !currentSettings || settings.n_gramm !== currentSettings.n_gramm
+  const rebuild = !currentSettings || settings.tokenizer !== currentSettings.tokenizer || settings.n_gramm !== currentSettings.n_gramm
     || settings.min_frequency !== currentSettings.min_frequency;
   setBusy(true, true);
   $('settings-button').firstChild.textContent = rebuild ? 'Пересчитываем модель… ' : 'Применяем… ';
@@ -225,3 +228,10 @@ $('settings-form').addEventListener('submit', async (event) => {
   finally { setBusy(false); $('settings-button').firstChild.textContent = 'Применить настройки '; }
 });
 refresh();
+
+function updateTokenizerHint() {
+  $('tokenizer-hint').textContent = $('tokenizer').value === 'character'
+    ? 'Один токен — один символ. Подходит для создания новых слов.'
+    : 'Слова, числа, пробелы и знаки — отдельные токены. Генерация использует слова из корпуса.';
+}
+$('tokenizer').addEventListener('change', updateTokenizerHint);

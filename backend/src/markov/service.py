@@ -1,9 +1,10 @@
 import logging
 from threading import RLock
 
-from markov.api.schemas import ModelSettings, ModelStats
+from markov.api.schemas import ModelSettings, ModelStats, TokenizerKind
 from markov.markov_chain import Markovka
-from markov.tokenizer import CharacterTokenizer
+from markov.rules import Tokenizer
+from markov.tokenizer import CharacterTokenizer, RegexTokenizer
 
 logger = logging.getLogger("markov.service")
 
@@ -14,15 +15,26 @@ class MarkovService:
         min_frequency: int = 3,
         max_length: int = 100,
         n_gramm: int = 15,
+        tokenizer_type: TokenizerKind = "character",
     ):
-        self.tokenizer = CharacterTokenizer(min_frequency=min_frequency)
+        self._settings = ModelSettings(
+            tokenizer=tokenizer_type,
+            n_gramm=n_gramm,
+            min_frequency=min_frequency,
+            max_length=max_length,
+        )
+        self.tokenizer = self._make_tokenizer(self._settings)
         self.model = Markovka(self.tokenizer, max_length=max_length, n_gramm=n_gramm)
         self._lock = RLock()
         self._texts_count = 0
         self._texts: list[str] = []
-        self._settings = ModelSettings(
-            n_gramm=n_gramm, min_frequency=min_frequency, max_length=max_length
-        )
+
+    @staticmethod
+    def _make_tokenizer(settings: ModelSettings) -> Tokenizer:
+        tokenizer_class = {"character": CharacterTokenizer, "regex": RegexTokenizer}[
+            settings.tokenizer
+        ]
+        return tokenizer_class(min_frequency=settings.min_frequency)
 
     def train(self, texts: list[str], replace: bool = False) -> ModelStats:
         with self._lock:
@@ -59,17 +71,19 @@ class MarkovService:
     def configure(self, settings: ModelSettings) -> ModelStats:
         with self._lock:
             rebuild = (
-                settings.n_gramm != self._settings.n_gramm
+                settings.tokenizer != self._settings.tokenizer
+                or settings.n_gramm != self._settings.n_gramm
                 or settings.min_frequency != self._settings.min_frequency
             )
             if rebuild:
                 logger.info(
-                    "Пересчёт модели: n_gramm=%s, min_frequency=%s, max_length=%s",
+                    "Пересчёт модели: tokenizer=%s, n_gramm=%s, min_frequency=%s, max_length=%s",
+                    settings.tokenizer,
                     settings.n_gramm,
                     settings.min_frequency,
                     settings.max_length,
                 )
-                tokenizer = CharacterTokenizer(min_frequency=settings.min_frequency)
+                tokenizer = self._make_tokenizer(settings)
                 model = Markovka(
                     tokenizer, max_length=settings.max_length, n_gramm=settings.n_gramm
                 )

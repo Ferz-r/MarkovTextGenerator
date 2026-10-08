@@ -111,7 +111,8 @@ async def train_file_stream(
 
     def operation() -> ModelStats:
         corpus = load_file_texts(path)
-        corpus.extend(extra_texts)
+        if extra_texts:
+            corpus.extend(TrainRequest(texts=extra_texts).texts)
         return service.train(corpus, replace=replace)
 
     return training_stream(operation, cleanup=lambda: path.unlink(missing_ok=True))
