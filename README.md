@@ -13,8 +13,8 @@ With Docker running, pull the prebuilt image from
 [Docker Hub](https://hub.docker.com/r/ferzr/markov_text_generator) and start it:
 
 ```sh
-docker pull ferzr/markov_text_generator:0.1.0
-docker run -p 8000:8000 -v markov-data:/app/backend/data ferzr/markov_text_generator:0.1.0
+docker pull ferzr/markov_text_generator
+docker run -p 8000:8000 -v markov-data:/app/backend/data ferzr/markov_text_generator
 ```
 
 Once the model is ready, open http://127.0.0.1:8000.
