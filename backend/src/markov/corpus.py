@@ -44,13 +44,6 @@ def load_corpus() -> list[str]:
     for dataset_name, fields, limit in SOURCES:
         texts.extend(load_texts(dataset_name, fields, limit))
 
-    cached = {"version": CACHE_VERSION, "sources": sources, "texts": texts}
-    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-    temporary_file = CACHE_FILE.with_suffix(".json.tmp")
-    temporary_file.write_text(json.dumps(cached, ensure_ascii=False), encoding="utf-8")
-    temporary_file.replace(CACHE_FILE)
-    logger.info("Кеш сохранён: %s", CACHE_FILE)
     return texts
 
 

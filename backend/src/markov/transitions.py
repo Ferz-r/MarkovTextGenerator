@@ -1,6 +1,7 @@
 from array import array
 from bisect import bisect_left
 from collections import OrderedDict, defaultdict
+from itertools import pairwise
 
 
 class TransitionIndex:
@@ -91,3 +92,46 @@ class TransitionIndex:
 
     def __len__(self) -> int:
         return self._contexts_count
+
+    def export_state(self) -> dict:
+        return {
+            "token_ids": self._token_ids,
+            "context_size": self._context_size,
+            "keys": self._keys,
+            "counts": self._counts.tolist(),
+            "contexts_count": self._contexts_count,
+        }
+
+    @classmethod
+    def from_state(cls, state: dict) -> "TransitionIndex":
+        token_ids = state["token_ids"]
+        size = state["context_size"]
+        keys, counts = state["keys"], state["counts"]
+        if (
+            not isinstance(token_ids, list)
+            or not token_ids
+            or any(type(token) is not int for token in token_ids)
+            or len(set(token_ids)) != len(token_ids)
+            or type(size) is not int
+            or size < 1
+            or not isinstance(keys, list)
+            or not isinstance(counts, list)
+            or len(keys) != len(counts)
+            or any(type(key) is not int or key < 0 for key in keys)
+            or any(type(count) is not int or count < 1 for count in counts)
+            or any(left >= right for left, right in pairwise(keys))
+        ):
+            raise ValueError("Invalid transition index snapshot")
+        index = cls({}, token_ids, size)
+        if any(
+            key >= 1 << (index._bits * (size + 1))
+            or (key & index._mask) >= len(token_ids)
+            for key in keys
+        ):
+            raise ValueError("Invalid packed transition record")
+        index._keys = keys
+        index._counts = array("Q", counts)
+        index._contexts_count = index._count_contexts()
+        if index._contexts_count != state["contexts_count"]:
+            raise ValueError("Invalid context count")
+        return index

@@ -46,12 +46,12 @@ async function streamTraining(path, data) {
   const panel = $('training-progress');
   panel.hidden = false;
   panel.classList.remove('failed');
-  updateProgress({stage: data instanceof FormData ? 'Загрузка файла на сервер' : 'Ожидание обучения', percent: 0, completed: 0, total: 0, elapsed: 0});
+  updateProgress({ stage: data instanceof FormData ? 'Загрузка файла на сервер' : 'Ожидание обучения', percent: 0, completed: 0, total: 0, elapsed: 0 });
   let result = null;
   try {
     const multipart = data instanceof FormData;
     const response = await fetch(`/api/v1/${path}/stream`, {
-      method: 'POST', ...(multipart ? {} : {headers: {'Content-Type': 'application/json'}}),
+      method: 'POST', ...(multipart ? {} : { headers: { 'Content-Type': 'application/json' } }),
       body: multipart ? data : JSON.stringify(data),
     });
     if (!response.ok) {
@@ -64,8 +64,8 @@ async function streamTraining(path, data) {
     let buffer = '';
     try {
       while (true) {
-        const {value, done} = await reader.read();
-        buffer += decoder.decode(value, {stream: !done});
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done });
         let boundary;
         while ((boundary = buffer.indexOf('\n\n')) >= 0) {
           const frame = buffer.slice(0, boundary);
@@ -80,7 +80,7 @@ async function streamTraining(path, data) {
         }
         if (done) break;
       }
-    } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+    } finally { await reader.cancel().catch(() => { }); reader.releaseLock(); }
     if (!result) throw new Error('Связь прервалась до завершения обучения. Обновите статистику, чтобы проверить состояние модели.');
     $('progress-stage').textContent = 'Готово';
     $('progress-percent').textContent = '100%';
@@ -190,7 +190,7 @@ $('train-form').addEventListener('submit', async (event) => {
   if (!texts.length && !trainingFile) {
     notify('Добавьте хотя бы один непустой текст.', true); return;
   }
-  if ($('replace').checked && !window.confirm('Заменить текущий корпус вашими текстами? Изменение действует до перезапуска сервера.')) return;
+  if ($('replace').checked && !window.confirm('Заменить текущий корпус вашими текстами? Сохранённая модель тоже будет заменена.')) return;
   setBusy(true, true);
   notify('Идёт обучение. Прогресс отображается ниже.');
   try {

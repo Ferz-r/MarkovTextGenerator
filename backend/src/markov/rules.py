@@ -145,3 +145,23 @@ class Tokenizer(ABC):
     @property
     def unk_id(self) -> int:
         return self._unk_id
+
+    def restore_vocabulary(self, vocabulary: dict[str, int]) -> None:
+        special = {
+            self._bos_str: self._bos_id,
+            self._eos_str: self._eos_id,
+            self._unk_str: self._unk_id,
+        }
+        if (
+            not isinstance(vocabulary, dict)
+            or any(
+                not isinstance(piece, str) or type(token) is not int
+                for piece, token in vocabulary.items()
+            )
+            or any(vocabulary.get(piece) != token for piece, token in special.items())
+            or len(set(vocabulary.values())) != len(vocabulary)
+        ):
+            raise ValueError("Invalid tokenizer vocabulary")
+        self._piece_to_token = dict(vocabulary)
+        self._token_to_piece = {token: piece for piece, token in vocabulary.items()}
+        self._next_id = max(vocabulary.values()) + 1

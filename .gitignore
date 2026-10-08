@@ -16,3 +16,7 @@ wheels/
 # Tool and OS caches
 .ruff_cache/
 .DS_Store
+
+# Trained model snapshots
+/backend/data/model.pkl.gz
+/backend/data/model.pkl.gz.*.tmp
