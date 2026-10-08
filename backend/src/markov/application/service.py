@@ -17,10 +17,10 @@ class MarkovService:
 
     def __init__(
         self,
-        min_frequency: int = 3,
-        max_length: int = 100,
-        n_gramm: int = 15,
-        tokenizer_type: TokenizerKind = "character",
+        min_frequency: int = 2,
+        max_length: int = 300,
+        n_gramm: int = 5,
+        tokenizer_type: TokenizerKind = "regex",
         model_path: Path | None = None,
     ):
         self._settings = ModelSettings(

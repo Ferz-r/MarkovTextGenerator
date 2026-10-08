@@ -13,7 +13,10 @@ API: http://127.0.0.1:8000/api/v1. Swagger: http://127.0.0.1:8000/docs.
 Startup loads `data/model.pkl.gz`. If the snapshot is missing or unreadable, the
 model trains on the corpus. Snapshot parameters take precedence over the service's
 initial settings. Training texts are loaded from configured sources;
-no local JSON corpus cache is used. The default dataset remains in Russian.
+no local JSON corpus cache is used. The default corpus combines Russian summaries
+from `Mikimi/russian-wikipedia-top100k` and English paragraphs from
+`agentlans/wikipedia-paragraphs`. Changing sources does not automatically retrain
+an existing snapshot.
 
 ## API
 
@@ -58,7 +61,7 @@ than a new HTTP status.
 ## Settings
 
 ```json
-{"tokenizer": "character", "n_gramm": 3, "min_frequency": 5, "max_length": 100}
+{"tokenizer": "character", "n_gramm": 3, "min_frequency": 5, "max_length": 300}
 ```
 
 - `tokenizer`: `character` or `regex`.

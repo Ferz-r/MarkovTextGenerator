@@ -5,6 +5,7 @@ from datasets import load_dataset
 # The limit counts records, not tokens. None uses the entire source.
 SOURCES = [
     ("Mikimi/russian-wikipedia-top100k", ("summary",), None),
+    ("agentlans/wikipedia-paragraphs", ("text",), None),
 ]
 
 logger = logging.getLogger("markov.corpus")

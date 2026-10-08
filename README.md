@@ -23,11 +23,13 @@ No local Python or uv installation is required for this option.
 
 The image includes Python, backend dependencies, and frontend files.
 The named `markov-data` volume preserves the model and Hugging Face cache between runs.
-If no saved model exists, the full `Mikimi/russian-wikipedia-top100k` dataset is
-downloaded and the model is trained. The first run requires network access,
+If no saved model exists, both `Mikimi/russian-wikipedia-top100k` (Russian) and
+`agentlans/wikipedia-paragraphs` (English) are downloaded and the model is trained
+on their combined texts. The first run requires network access,
 time, and memory. Subsequent runs load the snapshot from the volume.
-The default training corpus remains in Russian; the interface language does not
-change the language of generated text or translate topic queries.
+The default training corpus contains Russian and English texts. The interface
+language does not translate generated text or topic queries.
+Changing the source list does not update an existing model snapshot automatically.
 
 ## Build the Docker image yourself
 

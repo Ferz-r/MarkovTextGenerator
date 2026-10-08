@@ -6,7 +6,7 @@ TokenizerKind = Literal["character", "regex"]
 
 
 class ModelSettings(BaseModel):
-    tokenizer: TokenizerKind = "character"
+    tokenizer: TokenizerKind = "regex"
     n_gramm: int = Field(ge=1, le=50, strict=True)
     min_frequency: int = Field(ge=1, le=100000, strict=True)
     max_length: int = Field(ge=1, le=10000, strict=True)
