@@ -63,7 +63,9 @@ class StorageTests(unittest.TestCase):
     def test_character_snapshot_and_replacement(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "model.pkl.gz"
-            service = MarkovService(model_path=path, min_frequency=1, n_gramm=50)
+            service = MarkovService(
+                model_path=path, min_frequency=1, n_gramm=50, tokenizer_type="character"
+            )
             service.train(["арбуз", "банан"], replace=True)
             restored = MarkovService.load(path)
             self.assertIsInstance(restored.tokenizer, CharacterTokenizer)

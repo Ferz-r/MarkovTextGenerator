@@ -14,6 +14,12 @@ class TokenizerSettingsTests(unittest.TestCase):
         app = create_app(lambda: ["кот спит.", "пёс бежит."] * 5)
         with TestClient(app) as client:
             settings = client.get("/api/v1/model").json()["settings"]
+            self.assertEqual(settings["tokenizer"], "regex")
+            self.assertIsInstance(app.state.service.tokenizer, RegexTokenizer)
+            settings["tokenizer"] = "character"
+            self.assertEqual(
+                client.post("/api/v1/settings", json=settings).status_code, 200
+            )
             self.assertEqual(settings["tokenizer"], "character")
             self.assertIsInstance(app.state.service.tokenizer, CharacterTokenizer)
             client.post("/api/v1/generate", json={"topic": "кот"})

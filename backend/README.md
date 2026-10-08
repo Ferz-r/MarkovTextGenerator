@@ -64,7 +64,7 @@ than a new HTTP status.
 {"tokenizer": "character", "n_gramm": 3, "min_frequency": 5, "max_length": 300}
 ```
 
-- `tokenizer`: `character` or `regex`.
+- `tokenizer`: `character` or `regex` (default).
 - `n_gramm`: a context of 1–50 tokens. The historical API field name is preserved;
   the model uses `context_size` internally.
 - `min_frequency`: minimum token frequency, 1–100000.

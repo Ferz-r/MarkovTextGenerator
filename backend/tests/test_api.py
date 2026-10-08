@@ -47,6 +47,9 @@ class APITest(unittest.TestCase):
         with TestClient(app) as client:
             settings = client.get("/api/v1/model").json()["settings"]
             original_model = app.state.service.model
+            settings["tokenizer"] = "character"
+            client.post("/api/v1/settings", json=settings)
+            original_model = app.state.service.model
             settings["max_length"] = 1
             response = client.post("/api/v1/settings", json=settings)
             self.assertEqual(response.status_code, 200)
@@ -183,6 +186,7 @@ class APITest(unittest.TestCase):
         app = create_app(lambda: ["исходный текст"])
         with TestClient(app) as client:
             settings = client.get("/api/v1/model").json()["settings"]
+            settings["tokenizer"] = "character"
             settings["min_frequency"] = 1
             client.post("/api/v1/settings", json=settings)
             for uploaded in (False, True):
