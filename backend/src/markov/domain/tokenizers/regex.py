@@ -1,8 +1,6 @@
 import re
 
-from markov.rules import Tokenizer
-
-# import tiktoken
+from markov.domain.tokenizers.base import Tokenizer
 
 
 class RegexTokenizer(Tokenizer):
@@ -15,8 +13,3 @@ class RegexTokenizer(Tokenizer):
 
     def _split(self, text: str) -> list[str]:
         return self._token_pattern.findall(text)
-
-
-class CharacterTokenizer(Tokenizer):
-    def _split(self, text: str) -> list[str]:
-        return list(text)

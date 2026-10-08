@@ -3,14 +3,14 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import create_app
-from markov.markov_chain import Markovka
-from markov.tokenizer import RegexTokenizer
+from markov.app import create_app
+from markov.domain.model import MarkovChain
+from markov.domain.tokenizers.regex import RegexTokenizer
 
 
 class TopicTests(unittest.TestCase):
     def test_repeated_topic_uses_cache_and_keeps_general_transitions(self):
-        model = Markovka(RegexTokenizer(), max_length=10, n_gramm=3)
+        model = MarkovChain(RegexTokenizer(), max_length=10, context_size=3)
         model.fit(["кот спит.", "пёс бежит."])
         original = model.transitions
         with patch.object(
@@ -24,7 +24,7 @@ class TopicTests(unittest.TestCase):
         self.assertEqual(model.cached_topics, ("кот",))
 
     def test_corpus_changes_invalidate_topics(self):
-        model = Markovka(RegexTokenizer(), max_length=10, n_gramm=2)
+        model = MarkovChain(RegexTokenizer(), max_length=10, context_size=2)
         model.fit(["кот спит."])
         model.generate(topic="кот")
         model.update(["кот бежит."])
@@ -69,7 +69,7 @@ class TopicTests(unittest.TestCase):
             self.assertIn("No training texts found", response.json()["detail"])
 
     def test_topic_cache_is_bounded(self):
-        model = Markovka(RegexTokenizer(), max_length=2)
+        model = MarkovChain(RegexTokenizer(), max_length=2)
         model.fit(["кот пёс мышь."])
         for topic in ("кот", "пёс", "мышь"):
             model.generate(topic=topic)

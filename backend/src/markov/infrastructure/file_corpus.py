@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from markov.logging import TrainingProgress
+from markov.progress import TrainingProgress
 
 
 class CorpusFileError(ValueError):

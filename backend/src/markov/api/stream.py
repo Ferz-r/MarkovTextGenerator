@@ -7,9 +7,9 @@ from threading import Event, Thread
 from fastapi.responses import StreamingResponse
 from starlette.background import BackgroundTask
 
-from markov.api.schemas import ModelStats
-from markov.file_corpus import CorpusFileError
-from markov.logging import listen_progress
+from markov.domain.settings import ModelStats
+from markov.infrastructure.file_corpus import CorpusFileError
+from markov.progress import listen_progress
 
 logger = logging.getLogger("markov.api")
 

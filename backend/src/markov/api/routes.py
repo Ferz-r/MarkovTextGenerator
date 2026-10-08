@@ -11,13 +11,12 @@ from starlette.concurrency import run_in_threadpool
 from markov.api.schemas import (
     GenerateRequest,
     GenerateResponse,
-    ModelSettings,
-    ModelStats,
     TrainRequest,
 )
 from markov.api.stream import training_stream
-from markov.file_corpus import load_file_texts
-from markov.service import MarkovService
+from markov.application.service import MarkovService
+from markov.domain.settings import ModelSettings, ModelStats
+from markov.infrastructure.file_corpus import load_file_texts
 
 router = APIRouter()
 

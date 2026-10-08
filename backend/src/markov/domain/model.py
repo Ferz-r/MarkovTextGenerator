@@ -1,29 +1,32 @@
 import random
 from collections import OrderedDict
 
-from markov.logging import TrainingProgress
-from markov.rules import Tokenizer
-from markov.transitions import TransitionIndex
+from markov.domain.settings import ModelSettings
+from markov.domain.tokenizers.base import Tokenizer
+from markov.domain.tokenizers.character import CharacterTokenizer
+from markov.domain.tokenizers.regex import RegexTokenizer
+from markov.domain.transitions import TransitionIndex
+from markov.progress import TrainingProgress
 
 
-class Markovka:
+class MarkovChain:
     def __init__(
         self,
         tokenizer: Tokenizer,
         max_length: int = 3000,
-        n_gramm: int = 3,
+        context_size: int = 3,
     ):
-        if n_gramm < 1:
-            raise ValueError("n_gramm must be at least 1")
+        if context_size < 1:
+            raise ValueError("context_size must be at least 1")
         self._tokenizer = tokenizer
-        self._max_length = max_length
-        self._context_size = n_gramm
+        self.max_length = max_length
+        self._context_size = context_size
 
         self._texts: list[str] = []
         # Ограничиваем кеш: тематические таблицы могут занимать много памяти.
         self._topic_transitions: OrderedDict[str, TransitionIndex] = OrderedDict()
         self._frequencies = TransitionIndex(
-            {}, sorted(tokenizer.token_to_piece), n_gramm
+            {}, sorted(tokenizer.token_to_piece), context_size
         )
 
     def fit(self, texts: list[str]) -> None:
@@ -162,3 +165,66 @@ class Markovka:
         if value < 1:
             raise ValueError("max_length must be at least 1")
         self._max_length = value
+
+    @property
+    def texts(self) -> tuple[str, ...]:
+        return tuple(self._texts)
+
+    @property
+    def texts_count(self) -> int:
+        return len(self._texts)
+
+    @property
+    def tokenizer(self) -> Tokenizer:
+        return self._tokenizer
+
+    def export_state(self) -> dict:
+        return {
+            "vocabulary": self._tokenizer.piece_to_token,
+            "texts": list(self._texts),
+            "transitions": self._frequencies.export_state(),
+            "topics": {
+                topic: index.export_state()
+                for topic, index in self._topic_transitions.items()
+            },
+        }
+
+    @classmethod
+    def from_state(cls, state: dict, settings: ModelSettings) -> "MarkovChain":
+        texts = state["texts"]
+        if (
+            not isinstance(texts, list)
+            or not texts
+            or any(not isinstance(text, str) or not text.strip() for text in texts)
+        ):
+            raise ValueError("Invalid training corpus in model snapshot")
+        tokenizer_class = {"character": CharacterTokenizer, "regex": RegexTokenizer}[
+            settings.tokenizer
+        ]
+        tokenizer = tokenizer_class(min_frequency=settings.min_frequency)
+        tokenizer.restore_vocabulary(state["vocabulary"])
+        model = cls(tokenizer, settings.max_length, settings.n_gramm)
+        token_ids = sorted(tokenizer.token_to_piece)
+
+        def restore_index(data: dict) -> TransitionIndex:
+            index = TransitionIndex.from_state(data)
+            if index.context_size != settings.n_gramm or index.token_ids != tuple(
+                token_ids
+            ):
+                raise ValueError("Snapshot settings and transitions do not match")
+            return index
+
+        model._frequencies = restore_index(state["transitions"])
+        topics = state["topics"]
+        if not isinstance(topics, dict) or len(topics) > 2:
+            raise ValueError("Invalid topic cache")
+        for topic, data in topics.items():
+            if (
+                not isinstance(topic, str)
+                or not topic
+                or topic != topic.strip().casefold()
+            ):
+                raise ValueError("Invalid topic snapshot")
+            model._topic_transitions[topic] = restore_index(data)
+        model._texts = list(texts)
+        return model

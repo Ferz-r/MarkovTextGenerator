@@ -2,9 +2,11 @@ import unittest
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from main import create_app
-from markov.service import MarkovService
-from markov.tokenizer import CharacterTokenizer, RegexTokenizer
+
+from markov.app import create_app
+from markov.application.service import MarkovService
+from markov.domain.tokenizers.character import CharacterTokenizer
+from markov.domain.tokenizers.regex import RegexTokenizer
 
 
 class TokenizerSettingsTests(unittest.TestCase):

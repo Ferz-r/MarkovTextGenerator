@@ -3,8 +3,9 @@ import random
 import unittest
 from collections import defaultdict
 
-from markov.markov_chain import Markovka
-from markov.tokenizer import CharacterTokenizer, RegexTokenizer
+from markov.domain.model import MarkovChain
+from markov.domain.tokenizers.character import CharacterTokenizer
+from markov.domain.tokenizers.regex import RegexTokenizer
 
 
 def reference(tokenizer, texts, n):
@@ -32,7 +33,7 @@ class TransitionTests(unittest.TestCase):
                 tokenizer = tokenizer_type(
                     min_frequency=frequency, bos_id=7, eos_id=11, unk_id=4
                 )
-                model = Markovka(tokenizer, n_gramm=n)
+                model = MarkovChain(tokenizer, context_size=n)
                 model.fit(texts)
                 expected = reference(tokenizer, texts, n)
                 self.assertEqual(model.transitions, expected)
@@ -43,7 +44,7 @@ class TransitionTests(unittest.TestCase):
 
     def test_update_and_topic_use_current_vocabulary(self):
         tokenizer = CharacterTokenizer(min_frequency=3)
-        model = Markovka(tokenizer, n_gramm=50)
+        model = MarkovChain(tokenizer, context_size=50)
         model.fit(["аб", "аб"])
         model.update(["аб", "вг"])
         self.assertEqual(

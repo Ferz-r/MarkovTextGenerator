@@ -1,14 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import Protocol
 
-from markov.logging import TrainingProgress
-
-
-class TokenizerProtocol(Protocol):
-    def encode(self, text: str) -> list[int]: ...
-    def decode(self, tokens: list[int]) -> str: ...
-    def train(self, texts: list[str]) -> None: ...
+from markov.progress import TrainingProgress
 
 
 class Tokenizer(ABC):

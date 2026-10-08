@@ -1,4 +1,3 @@
-import json
 import logging
 from pathlib import Path
 
@@ -7,39 +6,12 @@ from datasets import load_dataset
 # Лимит задаёт количество записей, а не токенов. None — весь источник.
 SOURCES = [
     ("Mikimi/russian-wikipedia-top100k", ("summary",), None),
-    # ("inkoziev/ru_stories", tuple(f"sentence{i}" for i in range(1, 6)), 2000),
-    # ("IlyaGusev/gazeta", ("text",), 2000),
-    # # ("IlyaGusev/pikabu", ("text_markdown",), 2000),
-    # ("IlyaGusev/ficbook", ("parts",), 10),
 ]
 
-CACHE_FILE = Path(__file__).resolve().parents[2] / "data" / "texts.json"
 logger = logging.getLogger("markov.corpus")
-CACHE_VERSION = 1
 
 
 def load_corpus() -> list[str]:
-    sources = []
-    for dataset_name, fields, limit in SOURCES:
-        sources.append([dataset_name, list(fields), limit])
-
-    if CACHE_FILE.exists():
-        try:
-            cached = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError):
-            logger.warning("Кеш повреждён, загружаем тексты заново...")
-        else:
-            if (
-                isinstance(cached, dict)
-                and cached.get("version") == CACHE_VERSION
-                and cached.get("sources") == sources
-                and isinstance(cached.get("texts"), list)
-                and all(isinstance(text, str) for text in cached["texts"])
-            ):
-                logger.info("Читаем тексты из локального кеша: %s", CACHE_FILE)
-                return cached["texts"]
-            logger.info("Настройки источников изменились или кеш устарел, обновляем...")
-
     texts = []
     for dataset_name, fields, limit in SOURCES:
         texts.extend(load_texts(dataset_name, fields, limit))
@@ -80,3 +52,12 @@ def load_texts(
         raise ValueError(f"Источник {dataset_name} не содержит подходящих текстов")
     logger.info("%s: загружено %s текстов", dataset_name, len(texts))
     return texts
+
+
+def load_demo_corpus() -> list[str]:
+    """Load the small repository corpus without network access."""
+    from markov.infrastructure.file_corpus import load_file_texts
+
+    return load_file_texts(
+        Path(__file__).resolve().parents[4] / "examples" / "corpus.txt"
+    )

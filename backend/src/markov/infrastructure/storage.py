@@ -8,7 +8,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 logger = logging.getLogger("markov.storage")
-MODEL_FILE = Path(__file__).resolve().parents[2] / "data" / "model.pkl.gz"
+MODEL_FILE = Path(__file__).resolve().parents[3] / "data" / "model.pkl.gz"
 SNAPSHOT_VERSION = 1
 
 

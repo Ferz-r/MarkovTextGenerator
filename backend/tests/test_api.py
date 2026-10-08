@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from main import create_app
 from markov.api.schemas import TrainRequest
+from markov.app import create_app
 
 
 class APITest(unittest.TestCase):
@@ -221,7 +221,7 @@ class APITest(unittest.TestCase):
                 for text in model._texts:
                     self.assertNotIn("\n", text)
                 with patch(
-                    "markov.markov_chain.random.choices",
+                    "markov.domain.model.random.choices",
                     side_effect=lambda tokens, weights, tokenizer=tokenizer: (
                         [tokenizer.piece_to_token["б"]]
                         if tokenizer.piece_to_token["б"] in tokens

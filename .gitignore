@@ -18,5 +18,5 @@ wheels/
 .DS_Store
 
 # Trained model snapshots
-/backend/data/model.pkl.gz
-/backend/data/model.pkl.gz.*.tmp
+/backend/data/*.pkl.gz
+/backend/data/*.pkl.gz.*.tmp

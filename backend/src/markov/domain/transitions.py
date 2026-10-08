@@ -18,7 +18,7 @@ class TransitionIndex:
         token_ids: list[int],
         context_size: int,
     ):
-        self._token_ids = token_ids
+        self._token_ids = list(token_ids)
         self._codes = {token: code for code, token in enumerate(token_ids)}
         self._bits = max(1, (len(token_ids) - 1).bit_length())
         self._mask = (1 << self._bits) - 1
@@ -95,9 +95,9 @@ class TransitionIndex:
 
     def export_state(self) -> dict:
         return {
-            "token_ids": self._token_ids,
+            "token_ids": list(self._token_ids),
             "context_size": self._context_size,
-            "keys": self._keys,
+            "keys": list(self._keys),
             "counts": self._counts.tolist(),
             "contexts_count": self._contexts_count,
         }
@@ -125,7 +125,10 @@ class TransitionIndex:
         index = cls({}, token_ids, size)
         if any(
             key >= 1 << (index._bits * (size + 1))
-            or (key & index._mask) >= len(token_ids)
+            or any(
+                ((key >> (index._bits * position)) & index._mask) >= len(token_ids)
+                for position in range(size + 1)
+            )
             for key in keys
         ):
             raise ValueError("Invalid packed transition record")
@@ -135,3 +138,11 @@ class TransitionIndex:
         if index._contexts_count != state["contexts_count"]:
             raise ValueError("Invalid context count")
         return index
+
+    @property
+    def context_size(self) -> int:
+        return self._context_size
+
+    @property
+    def token_ids(self) -> tuple[int, ...]:
+        return tuple(self._token_ids)
