@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -41,12 +42,17 @@ def create_app(
         except Exception:
             logger.exception("Could not prepare the model")
             raise
-        app.state.service = service
-        try:
-            yield
-        finally:
-            app.state.service = None
-            logger.info("Application stopped")
+        # Keep the baseline on disk instead of holding a second large model in RAM.
+        with TemporaryDirectory(prefix="markov-initial-") as directory:
+            await run_in_threadpool(
+                service.capture_initial_state, Path(directory) / "initial.pkl.gz"
+            )
+            app.state.service = service
+            try:
+                yield
+            finally:
+                app.state.service = None
+                logger.info("Application stopped")
 
     app = FastAPI(title="Markov API", version="0.1.0", lifespan=lifespan)
     app.include_router(router, prefix="/api/v1")

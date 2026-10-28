@@ -121,6 +121,7 @@ function setBusy(value, training = false) {
   busy = value;
   $('generate-button').disabled = value;
   $('train-button').disabled = value;
+  $('reset-button').disabled = value;
   $('import-txt-button').disabled = value;
   $('training-file').disabled = value;
   $('remove-file-button').disabled = value;
@@ -206,6 +207,35 @@ $('train-form').addEventListener('submit', async (event) => {
     notify('Training complete. The model is ready for new stories.');
   } catch (error) { notify(error.message, true); }
   finally { setBusy(false); }
+});
+$('reset-button').addEventListener('click', async () => {
+  if (busy) return;
+  if (!window.confirm('Restore the model and settings from server startup? Training and settings changes from this session will be discarded, including the saved model.')) return;
+  setBusy(true, true);
+  $('reset-button').textContent = 'Restoring startup model…';
+  notify('Restoring the startup model. This may take a moment.');
+  try {
+    setStats(await streamTraining('reset', {}));
+    $('training-texts').value = '';
+    trainingFile = null;
+    $('training-file').value = '';
+    $('file-status').hidden = true;
+    $('remove-file-button').hidden = true;
+    $('replace').checked = false;
+    $('replace-warning').hidden = true;
+    $('topic').value = '';
+    lastText = '';
+    $('result').textContent = '';
+    $('result').hidden = true;
+    $('empty-result').hidden = false;
+    $('copy-button').disabled = true;
+    $('result-meta').textContent = '';
+    notify('Startup model restored and saved.');
+  } catch (error) { notify(error.message, true); }
+  finally {
+    setBusy(false);
+    $('reset-button').textContent = 'Reset to startup model ↺';
+  }
 });
 $('settings-form').addEventListener('submit', async (event) => {
   event.preventDefault();

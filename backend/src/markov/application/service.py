@@ -32,6 +32,7 @@ class MarkovService:
         self._model = self._make_model(self._settings)
         self._lock = RLock()
         self._model_path = model_path
+        self._initial_snapshot_path: Path | None = None
 
     @staticmethod
     def _make_model(settings: ModelSettings) -> MarkovChain:
@@ -64,6 +65,29 @@ class MarkovService:
             candidate.fit(corpus)
             self._persist(candidate, self._settings)
             self._model = candidate
+            return self.stats()
+
+    def capture_initial_state(self, path: Path) -> None:
+        """Keep a separate startup snapshot, unaffected by training and settings."""
+        with self._lock:
+            write_snapshot(
+                path,
+                {"settings": self._settings.model_dump(), **self._model.export_state()},
+            )
+            self._initial_snapshot_path = path
+
+    def reset(self) -> ModelStats:
+        """Restore the complete startup model and save it as the current model."""
+        with self._lock:
+            if self._initial_snapshot_path is None:
+                raise ValueError("The initial model snapshot is not available")
+            snapshot = read_snapshot(self._initial_snapshot_path)
+            settings = ModelSettings.model_validate(snapshot["settings"])
+            candidate = MarkovChain.from_state(snapshot, settings)
+            self._persist(candidate, settings)
+            self._model = candidate
+            self._settings = settings
+            logger.info("Restored the initial model")
             return self.stats()
 
     def generate(self, prefix: str, topic: str | None) -> str:

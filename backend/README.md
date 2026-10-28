@@ -26,6 +26,8 @@ an existing snapshot.
 | GET | `/model` | Settings, text count, vocabulary size, and context count |
 | POST | `/generate` | Generate with `prefix` and optional `topic` |
 | POST | `/train` | Train on `texts`; `replace: true` replaces the corpus |
+| POST | `/reset` | Restore the startup model, corpus, and settings |
+| POST | `/reset/stream` | Restore the startup model with SSE completion/error events |
 | POST | `/settings` | Change settings |
 | POST | `/train/stream` | Train with SSE progress |
 | POST | `/settings/stream` | Change settings with SSE progress |
@@ -100,3 +102,23 @@ uv run ruff check .
 uv run ruff format --check .
 uv run python -m unittest discover -s tests
 ```
+
+## Reset to the startup model
+
+Use **Reset to startup model** in the training section, or send
+`POST /api/v1/reset` (`POST /api/v1/reset/stream` for SSE). After confirmation,
+the interface restores the startup vocabulary, corpus, transition tables, and
+settings, refreshes statistics, and clears the previous generated result.
+The restored model is saved to the normal model file.
+
+The baseline is captured once after startup finishes loading or training. If the
+server loaded an existing snapshot, that snapshot is the baseline for this session;
+reset does not download the configured datasets or restore a model from an older
+session. To retain the original corpus when training, leave **Replace the current
+corpus** unchecked.
+
+A separate temporary snapshot holds the baseline on disk and is removed on normal
+shutdown. This needs additional temporary disk space but avoids retaining a second
+trained model in memory throughout the session. Reset temporarily loads a candidate
+model; a failed read or save leaves the current model unchanged. Training, settings
+changes, and reset use the same lock.

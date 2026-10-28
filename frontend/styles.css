@@ -525,6 +525,39 @@ summary small {
     max-width: 260px
 }
 
+.reset-model {
+    max-width: 700px;
+    padding: 20px 0 24px;
+    border-top: 1px solid var(--border)
+}
+
+.reset-button {
+    min-height: 46px;
+    max-width: 100%;
+    padding: 12px 20px;
+    border: 1px solid #b9c5b2;
+    border-radius: 9px;
+    background: #e8ecdf;
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+    transition: background .15s, border-color .15s
+}
+
+.reset-button:hover:enabled {
+    background: #dfe6d5;
+    border-color: #8fa184
+}
+
+.reset-button:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 3px
+}
+
+.reset-model .hint {
+    margin-bottom: 0
+}
+
 footer {
     display: flex;
     justify-content: space-between;

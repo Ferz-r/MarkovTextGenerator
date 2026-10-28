@@ -5,7 +5,9 @@ the interface uses HTML, CSS, and JavaScript with no build step.
 
 Continue a text, choose a topic, train the model on your own texts or `.txt` files,
 and change the context length, token frequency, and tokenizer type.
-The model is saved between runs.
+The model is saved between runs. Use **Reset to startup model** in the training
+section to restore the corpus, vocabulary, and settings from the start of the
+current server session without restarting.
 
 ## Quick start: Docker Hub
 

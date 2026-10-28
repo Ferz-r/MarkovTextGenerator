@@ -55,3 +55,12 @@ A new tokenizer inherits from `Tokenizer`, implements `_split`, and is added to 
 model's tokenizer selection. A new corpus source provides a `Callable[[], list[str]]`
 for `create_app`. Change persistence and synchronization policies in the service,
 HTTP representations in `api`, and the generation algorithm in the model.
+
+## Session reset
+
+After loading or training at startup, `app.py` asks the service to capture an
+independent temporary snapshot. The service restores that snapshot under its
+operation lock and persists the candidate before publishing it, just as with
+training. Reset restores settings as well as the model; it never trains or fetches
+sources. The startup snapshot lives until normal application shutdown. A restart
+captures the saved model at that time as the next session's baseline.

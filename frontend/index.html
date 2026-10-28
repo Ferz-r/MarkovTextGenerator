@@ -126,9 +126,14 @@
                     between runs.</p><label class="checkbox"><input id="replace" type="checkbox"> Replace
                     the current corpus with these texts</label>
                 <p id="replace-warning" class="hint warning" hidden>The current corpus and saved model will be replaced.
-                    To restore them, upload the original texts again.</p><button id="train-button" class="primary"
+                    Use Reset to startup model to restore the model from this server session.</p><button id="train-button" class="primary"
                     type="submit">Train model <span>↗</span></button>
             </form>
+            <div class="reset-model">
+                <button id="reset-button" class="reset-button" type="button" aria-describedby="reset-description">Reset to startup model ↺</button>
+                <p id="reset-description" class="hint">Restore the vocabulary, corpus, transitions, and settings from when this server started.
+                    Changes made during this session will be discarded.</p>
+            </div>
         </details>
         <footer><span>markov / an experiment with words</span><span>No magic. Just probabilities.</span></footer>
     </main>

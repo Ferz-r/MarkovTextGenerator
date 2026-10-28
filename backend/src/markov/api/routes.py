@@ -53,6 +53,16 @@ def train(payload: TrainRequest, request: Request) -> ModelStats:
     return get_service(request).train(payload.texts, replace=payload.replace)
 
 
+@router.post("/reset", response_model=ModelStats)
+def reset(request: Request) -> ModelStats:
+    return get_service(request).reset()
+
+
+@router.post("/reset/stream")
+def reset_stream(request: Request) -> StreamingResponse:
+    return training_stream(get_service(request).reset)
+
+
 @router.post("/settings", response_model=ModelStats)
 def configure(payload: ModelSettings, request: Request) -> ModelStats:
     return get_service(request).configure(payload)
